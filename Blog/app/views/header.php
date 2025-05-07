@@ -13,10 +13,18 @@
   <button class="btn btn-secondary dropdown-toggle bg-dark border-0 " type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
   <img src="https://cdn-icons-png.flaticon.com/512/9187/9187604.png" alt="User" width="30" height="30" class="me-2">
   </button>
-  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-    <a class="dropdown-item" href="/Blog/dados">Ver Dados</a>
-    <a class="dropdown-item" href="/Blog/logout">Logout</a>
+  <div class="dropdown-menu p-0" aria-labelledby="dropdownMenuButton">
+  <div class="bg-primary text-white text-center fw-bold py-2 rounded-top">
+    <?php echo htmlspecialchars($_SESSION['user']); ?>
   </div>
+  <div class="dropdown-divider m-0"></div>
+  <a class="dropdown-item" href="/Blog/dados">
+    <i class="bi bi-person-lines-fill me-2"></i> Ver Dados
+  </a>
+  <a class="dropdown-item" href="/Blog/logout">
+    <i class="bi bi-box-arrow-right me-2"></i> Logout
+  </a>
+</div>
 </div>
       <?php endif; ?>
       <input class="form-control me-2" name="pesquisa" type="search" placeholder="post" aria-label="Pesquisa">

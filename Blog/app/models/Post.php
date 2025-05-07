@@ -244,6 +244,30 @@ class Post {
         return $this->db->lastInsertId();
     }
 
+    public function apagarPost($id_post, $token) {
+        $id_user = $this->verificarToken($token);
+        if (!$id_user) {
+            $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+        }
+        $verifica = $this->db->prepare("SELECT id, id_user FROM posts WHERE id = :id_post");
+        $verifica->bindParam(':id_post', $id_post, PDO::PARAM_INT);
+        $verifica->execute();
+        if ($verifica->rowCount() == 0) {
+            $this->sendJsonResponse(['erro' => 'Post não encontrado'], 404);
+        }
+        $post = $verifica->fetch(PDO::FETCH_ASSOC);
+        if ($post['id_user'] != $id_user) {
+            $this->sendJsonResponse(['erro' => 'Acesso negado. Não és o owner do post.'], 403);
+        }
+        $apagarComentarios = $this->db->prepare("DELETE FROM comentarios WHERE id_parent = :id_post");
+        $apagarComentarios->bindParam(':id_post', $id_post, PDO::PARAM_INT);
+        $apagarComentarios->execute();
+        $apagarPost = $this->db->prepare("DELETE FROM posts WHERE id = :id_post");
+        $apagarPost->bindParam(':id_post', $id_post, PDO::PARAM_INT);
+        $apagarPost->execute();
+        $this->sendJsonResponse(['sucesso' => 'Post e comentários apagados com sucesso'], 200);
+    }
+
     public function criarComentario($title, $comentario, $id_post, $token, $id_parent = null) {
         $id_user = $this->verificarToken($token);
         if (!$id_user) {
@@ -272,6 +296,62 @@ class Post {
         return $stmt->execute() ? $this->db->lastInsertId() : false;
     }
 
+    public function apagarComentario($id_comentario, $token, $id_parent = null) {
+        $id_user = $this->verificarToken($token);
+        if (!$id_user) {
+            $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+        }
+        $verifica = $this->db->prepare("SELECT id, id_user, id_parent FROM comentarios WHERE id = :id");
+        $verifica->bindParam(':id', $id_comentario, PDO::PARAM_INT);
+        $verifica->execute();
+        if ($verifica->rowCount() == 0) {
+            $this->sendJsonResponse(['erro' => 'Comentário não encontrado ' . $id_comentario], 404);
+        }
+        $comentario = $verifica->fetch(PDO::FETCH_ASSOC);
+        if (!empty($comentario['id_parent'])) {
+            if ($id_parent) {
+                $verificaPai = $this->db->prepare("SELECT id_user FROM comentarios WHERE id = :id_parent");
+                $verificaPai->bindParam(':id_parent', $id_parent, PDO::PARAM_INT);
+                $verificaPai->execute();
+    
+                if ($verificaPai->rowCount() == 0) {
+                    $this->sendJsonResponse(['erro' => 'Comentário pai não encontrado'], 404);
+                }
+            } else {
+                $this->sendJsonResponse(['erro' => 'Comentário pai não foi especificado.'], 400);
+            }
+        } else {
+            if ($comentario['id_user'] != $id_user) {
+                $this->sendJsonResponse(['erro' => 'Acesso negado. Não és o dono do comentário.'], 403);
+            }
+        }
+        if (empty($comentario['id_parent'])) {
+            $apagarFilhos = $this->db->prepare("DELETE FROM comentarios WHERE id_parent = :id_comentario");
+            $apagarFilhos->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
+            $apagarFilhos->execute();
+        }
+        $apagarComentario = $this->db->prepare("DELETE FROM comentarios WHERE id = :id_comentario");
+        $apagarComentario->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
+        $apagarComentario->execute();
+        $mensagem = empty($comentario['id_parent']) ? 'Comentário e respostas apagados com sucesso' : 'Resposta apagada com sucesso';
+        $this->sendJsonResponse(['sucesso' => $mensagem], 200);
+    }
+
+    public function getTokenUser($user){
+        $query = "
+            SELECT users.id AS user_id
+            FROM users
+            WHERE username = :username
+        ";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':username', $user);
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result['user_id'];
+        }
+        return false;
+    } 
     public function verificarToken($token) {
         $query = "
             SELECT users.id AS id_user

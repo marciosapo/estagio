@@ -1,5 +1,4 @@
 *<div class="container ml-5">
-    <h1>Posts do Blog</h1>
     <?php if (isset($post) && !empty($post)): ?>
         <div class="row">
                 <div class="col-12 mb-4">
@@ -23,8 +22,8 @@
                                 <?php if(isset($_SESSION['user'])): ?>
                                     <?php if($_SESSION['user'] == $comentario['autor'] && isset($_POST['editar'])): ?>
                                         <form action="/Blog/verPost" method="POST" class="ml-3 mb-3">
-                                            <input type=hidden name=id value="<?php echo $comentario['id']; ?>">
-                                            <input type=hidden name=id_parent value="<?php echo $post['id']; ?>">         
+                                            <input type=hidden name=id value="<?php echo $post['id']; ?>">
+                                            <input type=hidden name=id_parent value="<?php echo $comentario['id']; ?>">         
                                             <input type="hidden" name="editarid" value="<?php echo $comentario['id']; ?>">
                                             <div class="form-group">
                                                 <textarea id="comment" value="<?php echo $comentario['post'] ?>" name="comment" class="form-control no-resize" rows="3" cols="80" placeholder="Escreva a sua resposta aqui..."></textarea>
@@ -32,11 +31,18 @@
                                             <input type=submit name=cancelar value="Cancelar" class="btn btn-secondary">
                                             <input type=submit name=editar value="Editar" class="btn btn-secondary">
                                         </form>
-                                    <?php endif; ?>
+                                    <?php elseif($_SESSION['user'] == $comentario['autor'] && !isset($_POST['editar'])): ?>
+                                        <form action="/Blog/verPost" method="POST" class="ml-3 mb-3">
+                                        <input type=hidden name=id value="<?php echo $comentario['id']; ?>">
+                                        <input type="hidden" name="editarid" value="<?php echo $resposta['id']; ?>">
+                                        <input type=submit name=editar value="Editar" class="btn btn-sm btn-secondary">
+                                        <input type=submit name=apagar value="Apagar" class="btn btn-sm btn-secondary">
+                                    </form>
+                                    <?php endif; ?> 
                                     <?php if (isset($_POST['responder']) && $_POST['respondeid'] == $comentario['id']): ?>
                                         <form action="/Blog/verPost" method="POST" class="ml-3 mb-3">
-                                            <input type=hidden name=id value="<?php echo $comentario['id']; ?>">
-                                            <input type=hidden name=id_parent value="<?php echo $post['id']; ?>">         
+                                            <input type=hidden name=id value="<?php echo $post['id']; ?>">
+                                            <input type=hidden name=id_parent value="<?php echo $comentario['id']; ?>">         
                                             <input type="hidden" name="respondeid" value="<?php echo $comentario['id']; ?>">
                                             <div class="form-group">
                                                 <textarea id="comment" name="comment" class="form-control no-resize" rows="3" cols="80" placeholder="Escreva a sua resposta aqui..."></textarea>
@@ -81,8 +87,8 @@
                                             <div class="d-flex gap-2 ml-1 mb-3">
                                             <?php if (isset($_POST['editar']) && $_POST['editarid'] == $resposta['id']): ?>
                                                     <form action="/Blog/verPost" method="POST" class="ml-3 mb-3 mr-3">
-                                                        <input type=hidden name=id value="<?php echo $comentario['id']; ?>">
-                                                        <input type=hidden name=id_parent value="<?php echo $post['id']; ?>">
+                                                        <input type=hidden name=id value="<?php echo $post['id']; ?>">
+                                                        <input type=hidden name=id_parent value="<?php echo $comentario['id']; ?>">
                                                         <input type="hidden" name="editarid" value="<?php echo $resposta['id']; ?>">
                                                         <div class="form-group">
                                                             <textarea id="comment" name="comment" class="form-control no-resize" rows="3" cols="80" placeholder="Escreva a sua resposta aqui..."><?php echo $resposta['comentario'] ?></textarea>
@@ -93,8 +99,8 @@
                                                 <?php endif; ?>
                                                 <?php if (isset($_POST['responder']) && $_POST['respondeid'] == $resposta['id']): ?>
                                                     <form action="/Blog/verPost" method="POST" class="ml-3 mb-3 mr-3">
-                                                        <input type=hidden name=id value="<?php echo $comentario['id']; ?>">
-                                                        <input type=hidden name=id_parent value="<?php echo $post['id']; ?>">
+                                                        <input type=hidden name=id value="<?php echo $post['id']; ?>">
+                                                        <input type=hidden name=id_parent value="<?php echo $comentario['id']; ?>">
                                                         <input type="hidden" name="respondeid" value="<?php echo $comentario['id']; ?>">
                                                         <div class="form-group">
                                                             <textarea id="comment" name="comment" class="form-control no-resize" rows="3" cols="80" placeholder="Escreva a sua resposta aqui..."></textarea>
@@ -106,15 +112,16 @@
                                                     <?php else: ?>
                                                         <?php if($_SESSION['user'] == $resposta['autor'] && !isset($_POST['editar'])): ?>
                                                         <form action="/Blog/verPost" method="POST" class="ml-3 mb-3">
-                                                        <input type=hidden name=id value="<?php echo $comentario['id']; ?>">
-                                                        <input type=hidden name=id_parent value="<?php echo $post['id']; ?>">
+                                                        <input type=hidden name=id value="<?php echo $post['id']; ?>">
+                                                        <input type=hidden name=id_parent value="<?php echo $comentario['id']; ?>">
                                                         <input type="hidden" name="editarid" value="<?php echo $resposta['id']; ?>">
                                                         <input type=submit name=editar value="Editar" class="btn btn-sm btn-secondary">
+                                                        <input type=submit name=apagar value="Apagar" class="btn btn-sm btn-secondary">
                                                     </form>
                                                     <?php else: ?> 
                                                     <form action="/Blog/verPost" method="POST" class="ml-3 mb-3">
-                                                        <input type=hidden name=id value="<?php echo $comentario['id']; ?>">
-                                                        <input type=hidden name=id_parent value="<?php echo $post['id']; ?>">
+                                                        <input type=hidden name=id value="<?php echo $post['id']; ?>">
+                                                        <input type=hidden name=id_parent value="<?php echo $comentario['id']; ?>">
                                                         <input type="hidden" name="respondeid" value="<?php echo $resposta['id']; ?>">
                                                         <div class="form-group">
                                                             <input type=submit name=responder value="Responder" class="btn btn-sm btn-secondary">
@@ -133,7 +140,7 @@
                     </div>
                     <?php endif; ?>
                         </div>
-                        <?php if(isset($_SESSION['user'])): ?>
+                        <?php if(isset($_SESSION['user']) && $_SESSION['user'] != $post['postado']): ?>
                             <form action="/Blog/verPost" method="POST" class="ml-3 mb-3 mr-3">
                                 <input type=hidden name=id value="<?php echo $post['id']; ?>">
                                 <div class="form-group">
