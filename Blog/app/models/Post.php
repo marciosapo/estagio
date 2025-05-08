@@ -7,7 +7,8 @@ class Post {
     public function __construct() {
         $this->db = Database::getInstance();
     }
-    public function getAllPosts() {
+    public function getAllPosts($de) {
+        $ordem = strtoupper($de);
         $query = "
             SELECT 
                 posts.id AS post_id,
@@ -26,7 +27,7 @@ class Post {
             LEFT JOIN users AS autor_post ON posts.id_user = autor_post.id
             LEFT JOIN comentarios ON comentarios.id_post = posts.id
             LEFT JOIN users AS autor_coment ON comentarios.id_user = autor_coment.id
-            ORDER BY posts.id, comentarios.id
+            ORDER BY posts.id $ordem, comentarios.id
         ";
         $stmt = $this->db->query($query);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -80,75 +81,75 @@ class Post {
         } 
         return array_values($posts);
     }
-        public function getPostById($id) {
-            $query = "
-                SELECT 
-                    posts.id AS post_id,
-                    posts.title,
-                    posts.post AS conteudo,
-                    posts.post_data AS post_data_post,
-                    autor_post.username AS nome_autor_post,
-                    comentarios.id AS comentario_id,
-                    comentarios.title as comentario_title,
-                    comentarios.comentario,
-                    comentarios.post_data AS post_data_comentario,
-                    comentarios.id_parent,
-                    autor_coment.username AS nome_autor_comentario
+    public function getPostById($id) {
+        $query = "
+            SELECT 
+                posts.id AS post_id,
+                posts.title,
+                posts.post AS conteudo,
+                posts.post_data AS post_data_post,
+                autor_post.username AS nome_autor_post,
+                comentarios.id AS comentario_id,
+                comentarios.title as comentario_title,
+                comentarios.comentario,
+                comentarios.post_data AS post_data_comentario,
+                comentarios.id_parent,
+                autor_coment.username AS nome_autor_comentario
 
-                FROM posts
-                LEFT JOIN users AS autor_post ON posts.id_user = autor_post.id
-                LEFT JOIN comentarios ON comentarios.id_post = posts.id
-                LEFT JOIN users AS autor_coment ON comentarios.id_user = autor_coment.id
-                WHERE posts.id = ?
-                ORDER BY posts.id, comentarios.id
-            ";
-        
-            $stmt = $this->db->prepare($query);
-            $stmt->execute([$id]);
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-            if (empty($rows)) {
-                return null;
-            }
-            $post = [
-                'id' => $rows[0]['post_id'],
-                'title' => $rows[0]['title'],
-                'post' => $rows[0]['conteudo'],
-                'post_data' => $rows[0]['post_data_post'],
-                'postado' => $rows[0]['nome_autor_post'], 
-                'comentarios_map' => [],
-                'comentarios' => [],
-            ];
-            foreach ($rows as $row) {
-                if (!empty($row['comentario_id'])) {
-                    $comentarioId = $row['comentario_id'];
-                    $comentario = [ 
-                        'id' => $comentarioId,
-                        'title' => $row['comentario_title'],
-                        'comentario' => $row['comentario'],
-                        'autor' => $row['nome_autor_comentario'],
-                        'post_data' => $row['post_data_comentario']
-                    ];
-                    if (!is_null($row['id_parent'])) {
-                        $comentario['id_parent'] = $row['id_parent'];
-                    }
-                    $comentario['respostas'] = [];
-                    $post['comentarios_map'][$comentarioId] = $comentario;  
-                }
-            }
-            foreach ($post['comentarios_map'] as $comentarioId => &$comentario){
-                if (isset($comentario['id_parent']) && isset($post['comentarios_map'][$comentario['id_parent']])) {
-                    $parentId = $comentario['id_parent'];
-                    if (isset($post['comentarios_map'][$parentId])){
-                        $post['comentarios_map'][$parentId]['respostas'][] = &$comentario;    
-                    } 
-                } else{
-                    $post['comentarios'][] = &$comentario; 
-                } 
-            } 
-            unset($post['comentarios_map']);
-            return $post;
+            FROM posts
+            LEFT JOIN users AS autor_post ON posts.id_user = autor_post.id
+            LEFT JOIN comentarios ON comentarios.id_post = posts.id
+            LEFT JOIN users AS autor_coment ON comentarios.id_user = autor_coment.id
+            WHERE posts.id = ?
+            ORDER BY posts.id, comentarios.id
+        ";
+    
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$id]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+        if (empty($rows)) {
+            return null;
         }
+        $post = [
+            'id' => $rows[0]['post_id'],
+            'title' => $rows[0]['title'],
+            'post' => $rows[0]['conteudo'],
+            'post_data' => $rows[0]['post_data_post'],
+            'postado' => $rows[0]['nome_autor_post'], 
+            'comentarios_map' => [],
+            'comentarios' => [],
+        ];
+        foreach ($rows as $row) {
+            if (!empty($row['comentario_id'])) {
+                $comentarioId = $row['comentario_id'];
+                $comentario = [ 
+                    'id' => $comentarioId,
+                    'title' => $row['comentario_title'],
+                    'comentario' => $row['comentario'],
+                    'autor' => $row['nome_autor_comentario'],
+                    'post_data' => $row['post_data_comentario']
+                ];
+                if (!is_null($row['id_parent'])) {
+                    $comentario['id_parent'] = $row['id_parent'];
+                }
+                $comentario['respostas'] = [];
+                $post['comentarios_map'][$comentarioId] = $comentario;  
+            }
+        }
+        foreach ($post['comentarios_map'] as $comentarioId => &$comentario){
+            if (isset($comentario['id_parent']) && isset($post['comentarios_map'][$comentario['id_parent']])) {
+                $parentId = $comentario['id_parent'];
+                if (isset($post['comentarios_map'][$parentId])){
+                    $post['comentarios_map'][$parentId]['respostas'][] = &$comentario;    
+                } 
+            } else{
+                $post['comentarios'][] = &$comentario; 
+            } 
+        } 
+        unset($post['comentarios_map']);
+        return $post;
+    }
 
 
     public function getPost($search) {
@@ -176,6 +177,86 @@ class Post {
     
         $stmt = $this->db->prepare($query);
         $stmt->execute([$pesquisa]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+        if (empty($rows)) {
+            return null;
+        }
+        $posts = [];
+        foreach ($rows as $row) {
+            $postId = $row['post_id'];
+            if (!isset($posts[$postId])) {
+                $posts[$postId] = [
+                    'id' => $postId,
+                    'title' => $row['title'],
+                    'post' => $row['conteudo'],
+                    'post_data' => $row['post_data_post'],
+                    'postado' => $row['nome_autor_post'], 
+                    'comentarios_map' => [],
+                    'comentarios' =>[], 
+                    'nComentarios' => 0
+                ];
+            }
+            if (!empty($row['comentario_id'])) {
+                $posts[$postId]['nComentarios'] += 1;
+                $comentarioId = $row['comentario_id'];
+                $comentario = [
+                    'id' => $comentarioId,
+                    'title' => $row['comentario_title'],
+                    'comentario' => $row['comentario'],
+                    'autor' => $row['nome_autor_comentario'],
+                    'post_data' => $row['post_data_comentario']
+                ];
+                if (!is_null($row['id_parent'])) {
+                    $comentario['id_parent'] = $row['id_parent'];
+                }
+                $comentario['respostas'] = [];
+                $posts[$postId]['comentarios_map'][$comentarioId] = $comentario;  
+            }
+        }
+        foreach ($posts as &$post) {
+            foreach ($post['comentarios_map'] as $comentarioId => &$comentario) {
+                if (isset($comentario['id_parent']) && isset($post['comentarios_map'][$comentario['id_parent']])) {
+                    $parentId = $comentario['id_parent'];
+                    if (isset($post['comentarios_map'][$parentId])){
+                        $post['comentarios_map'][$parentId]['respostas'][] = &$comentario;
+                    } 
+                } else {
+                    $post['comentarios'][] = &$comentario;
+                }
+            }
+            unset($post['comentarios_map']);
+        }
+        foreach ($posts as &$post) {
+            unset($post['comentarios_map']);
+        } 
+        return array_values($posts);
+    }
+
+    public function getRecentPost() {
+        $query = "
+            SELECT 
+                posts.id AS post_id,
+                posts.title,
+                posts.post AS conteudo,
+                posts.post_data AS post_data_post,
+                autor_post.username AS nome_autor_post,
+                comentarios.id AS comentario_id,
+                comentarios.title as comentario_title,
+                comentarios.comentario,
+                comentarios.post_data AS post_data_comentario,
+                comentarios.id_parent,
+                autor_coment.username AS nome_autor_comentario
+            FROM posts
+            LEFT JOIN users AS autor_post ON posts.id_user = autor_post.id
+            LEFT JOIN comentarios ON comentarios.id_post = posts.id
+            LEFT JOIN users AS autor_coment ON comentarios.id_user = autor_coment.id
+            ORDER BY posts.post_data DESC
+            LIMIT 1
+        ";
+    
+        $stmt = $this->db->prepare($query);
+        $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
         if (empty($rows)) {

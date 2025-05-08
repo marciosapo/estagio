@@ -16,7 +16,7 @@
                         <p class="text-muted mb-0">
                             Postado por <strong><?php echo $post['postado']; ?></strong> 
                             em <time datetime="<?php echo $post['post_data']; ?>">
-                                <?php echo date('d M Y', strtotime($post['post_data'])); ?>
+                                <?php echo strftime('%d de %B de %Y', strtotime($post['post_data'])); ?>
                             </time>
                             /
                             <input type=submit class="btn btn-sm btn-outline-secondary"

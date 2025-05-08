@@ -11,6 +11,7 @@ class Database {
         $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME;
         $this->db = new PDO($dsn, DB_USER, DB_PASS);
         $this->db->exec("SET NAMES 'utf8'");
+        $this->db->exec("SET lc_time_names = 'pt_BR'");
     }
 
     // Get the single instance of the database connection

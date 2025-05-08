@@ -1,5 +1,4 @@
 <?php
-session_start();
 require_once __DIR__ . '/../core/Controller.php';
 
 class BlogController extends Controller {
@@ -21,27 +20,101 @@ class BlogController extends Controller {
     }
 
     public function index(){
-        if(!isset($_POST['pesquisa'])){
-            $posts = $this->postModel->getAllPosts();
-        }else {
+        if(!isset($_POST['pesquisa']) && !isset($_POST['recente'])){
+            $posts = $this->postModel->getAllPosts("ASC");
+        }else if(isset($_POST['recente'])){
+            $posts = $this->postModel->getRecentPost();
+        }else if(isset($_POST['doRecente'])){
+            $posts = $this->postModel->getAllPosts("DESC");
+        }else if(isset($_POST['doAntigo'])){
+            $posts = $this->postModel->getAllPosts("ASC");
+        }
+        else {
             $posts = $this->postModel->getPost($_POST['pesquisa']);
         }
         $view = '../app/views/index.php';
         require '../app/views/layout.php';
     }
-    public function verPost(){
-        
-        if(!isset($_POST['id'])) {
+    public function verPost()
+    {
+        require_once '../app/helpers/tempo.php';
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['titulo'], $_POST['comment'], $_POST['id'])) {
+            if (isset($_POST['novoComentario'])) {
+                if (!isset($_SESSION['user'], $_SESSION['token'])) {
+                    header("Location: /Blog/");
+                    exit;
+                }
+                $token = $_SESSION['token'];
+                $id_user = $this->userModel->verificarToken($token);
+                if (!$id_user) {
+                    $erro = 'Token inválido ou expirado';
+                } else {
+                    $titulo = $_POST['titulo'];
+                    $conteudo = $_POST['comment'];
+                    $id = $_POST['id'];
+
+                    if (empty($titulo) || empty($conteudo)) {
+                        $erro = 'Título e conteúdo não podem estar vazios';
+                    } else {
+                        $resultado = $this->postModel->criarComentario($titulo, $conteudo, $id, $token);
+                        if (!$resultado) {
+                            $erro = 'Erro ao criar comentário';
+                        }
+                    }
+                }
+                $post = $this->postModel->getPostById($_POST['id']);
+                $view = '../app/views/verPost.php';
+                require '../app/views/layout.php';
+            } 
+        }else { 
+            if (isset($_POST['id'])) {
+                $post = $this->postModel->getPostById($_POST['id']);
+                $view = '../app/views/verPost.php';
+                require '../app/views/layout.php';
+            } else {
+                header("Location: /Blog/");
+                exit;
+            }
+        } 
+    } 
+    public function novoPost(){
+        if (isset($_SESSION['user'])) {
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                if (!isset($_POST['titulo']) || !isset($_POST['conteudo'])) {
+                    $this->sendJsonResponse(['erro' => 'Dados incompletos'], 400);
+                    return;
+                }
+                $token = $_SESSION['token'];
+                $id_user = $this->userModel->verificarToken($token);
+                if (!$id_user) {
+                    $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+                }
+                $titulo = $_POST['titulo'];
+                $conteudo = $_POST['conteudo'];
+                if (empty($titulo) || empty($conteudo)) {
+                    $this->sendJsonResponse(['erro' => 'Título e conteúdo não podem estar vazios'], 400);
+                    return;
+                }
+                $resultado = $this->postModel->criarPost($titulo, $conteudo, $token);
+                if ($resultado) {
+                    $sucesso = 'Post criado com sucesso!';
+                } else {
+                    $erro = 'Erro ao criar o post';
+                }
+            } 
+            $view = '../app/views/novoPost.php';
+            require '../app/views/layout.php';
+         } else {
             header("Location: /Blog/");
             exit;
         }
-        else {
-            $post = $this->postModel->getPostById($_POST['id']);
-            $view = '../app/views/verPost.php';
-            require '../app/views/layout.php';
-        }
     }
+
     public function login(){
+        if (isset($_SESSION['user']) && isset($_SESSION['token'])) {
+            header("Location: /Blog/");
+            exit;
+        }
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = $_POST['user'] ?? '';
             $password = $_POST['pass'] ?? '';
@@ -128,7 +201,7 @@ class BlogController extends Controller {
     public function atualizarDados() {
         if (isset($_SESSION['user'])) {
             $sucesso = false;
-            $token = $_POST['token'];
+            $token = $_SESSION['token'];
             $id_user = $this->userModel->verificarToken($token);
             if (!$id_user) {
                 $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
@@ -162,6 +235,5 @@ class BlogController extends Controller {
             exit;
         }
     }
-
 } 
 ?>

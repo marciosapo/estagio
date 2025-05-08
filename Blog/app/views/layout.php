@@ -1,3 +1,4 @@
+<?php setlocale(LC_TIME, 'pt_PT.UTF-8', 'pt_PT', 'portuguese'); ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
