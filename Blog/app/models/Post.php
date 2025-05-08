@@ -7,7 +7,7 @@ class Post {
     public function __construct() {
         $this->db = Database::getInstance();
     }
-    public function getAllPosts($de) {
+    public function getAllPosts($de = 'ASC') {
         $ordem = strtoupper($de);
         $query = "
             SELECT 
@@ -17,7 +17,6 @@ class Post {
                 posts.post_data AS post_data_post,
                 autor_post.username AS nome_autor_post,
                 comentarios.id AS comentario_id,
-                comentarios.title as comentario_title,
                 comentarios.comentario,
                 comentarios.post_data AS post_data_comentario,
                 comentarios.id_parent,
@@ -51,7 +50,6 @@ class Post {
                 $comentarioId = $row['comentario_id'];
                 $comentario = [
                     'id' => $comentarioId,
-                    'title' => $row['comentario_title'],
                     'comentario' => $row['comentario'],
                     'autor' => $row['nome_autor_comentario'],
                     'post_data' => $row['post_data_comentario']
@@ -90,7 +88,6 @@ class Post {
                 posts.post_data AS post_data_post,
                 autor_post.username AS nome_autor_post,
                 comentarios.id AS comentario_id,
-                comentarios.title as comentario_title,
                 comentarios.comentario,
                 comentarios.post_data AS post_data_comentario,
                 comentarios.id_parent,
@@ -125,7 +122,6 @@ class Post {
                 $comentarioId = $row['comentario_id'];
                 $comentario = [ 
                     'id' => $comentarioId,
-                    'title' => $row['comentario_title'],
                     'comentario' => $row['comentario'],
                     'autor' => $row['nome_autor_comentario'],
                     'post_data' => $row['post_data_comentario']
@@ -162,7 +158,6 @@ class Post {
                 posts.post_data AS post_data_post,
                 autor_post.username AS nome_autor_post,
                 comentarios.id AS comentario_id,
-                comentarios.title as comentario_title,
                 comentarios.comentario,
                 comentarios.post_data AS post_data_comentario,
                 comentarios.id_parent,
@@ -202,7 +197,6 @@ class Post {
                 $comentarioId = $row['comentario_id'];
                 $comentario = [
                     'id' => $comentarioId,
-                    'title' => $row['comentario_title'],
                     'comentario' => $row['comentario'],
                     'autor' => $row['nome_autor_comentario'],
                     'post_data' => $row['post_data_comentario']
@@ -242,7 +236,6 @@ class Post {
                 posts.post_data AS post_data_post,
                 autor_post.username AS nome_autor_post,
                 comentarios.id AS comentario_id,
-                comentarios.title as comentario_title,
                 comentarios.comentario,
                 comentarios.post_data AS post_data_comentario,
                 comentarios.id_parent,
@@ -282,7 +275,6 @@ class Post {
                 $comentarioId = $row['comentario_id'];
                 $comentario = [
                     'id' => $comentarioId,
-                    'title' => $row['comentario_title'],
                     'comentario' => $row['comentario'],
                     'autor' => $row['nome_autor_comentario'],
                     'post_data' => $row['post_data_comentario']
@@ -361,10 +353,9 @@ class Post {
         if ($verifica->rowCount() == 0) {
             return 'POST_NOT_FOUND';
         }
-        $query = "INSERT INTO comentarios (title, comentario, id_user, id_post, id_parent, post_data)
-                 VALUES(:title, :comentario, :id_user, :id_post, :id_parent, NOW())";
+        $query = "INSERT INTO comentarios (comentario, id_user, id_post, id_parent, post_data)
+                 VALUES(:comentario, :id_user, :id_post, :id_parent, NOW())";
         $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':title', $title);
         $stmt->bindParam(':comentario', $comentario);
         $stmt->bindParam(':id_user', $id_user);
         $stmt->bindParam(':id_post', $id_post);
@@ -416,6 +407,33 @@ class Post {
         $apagarComentario->execute();
         $mensagem = empty($comentario['id_parent']) ? 'Comentário e respostas apagados com sucesso' : 'Resposta apagada com sucesso';
         $this->sendJsonResponse(['sucesso' => $mensagem], 200);
+    }
+
+    public function atualizarComentario($id_comentario, $comentario, $token) {
+        $id_user = $this->verificarToken($token);
+        if (!$id_user) {
+            $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+        }
+        $verifica = $this->db->prepare("SELECT id_user FROM comentarios WHERE id = :id_comentario");
+        $verifica->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
+        $verifica->execute();
+    
+        if ($verifica->rowCount() == 0) {
+            $this->sendJsonResponse(['erro' => 'Comentário não encontrado'], 404);
+        }
+        $comentario_data = $verifica->fetch(PDO::FETCH_ASSOC);
+        if ($comentario_data['id_user'] !== $id_user) {
+            $this->sendJsonResponse(['erro' => 'Não és o dono do comentário'], 404);
+        }
+        $query = "UPDATE comentarios SET comentario = :comentario, post_data = NOW() WHERE id = :id_comentario";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':comentario', $comentario);
+        $stmt->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
+        if($stmt->execute()){
+            $this->sendJsonResponse(['sucesso' => 'Comentário atualizado com sucesso'], 200);
+        }else{
+            this->sendJsonResponse(['erro' => 'Falha a atualizar o comentário'], 200);
+        }    
     }
 
     public function getTokenUser($user){

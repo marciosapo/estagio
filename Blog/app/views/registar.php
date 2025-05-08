@@ -26,9 +26,9 @@
           <p class="text-center text-danger">ERRO: <?= htmlspecialchars($erro) ?></p>
           </div> 
           <?php elseif(isset($sucesso) && $sucesso): ?>
-            <div class="ms-auto">
-            <p class="text-center text-danger"><?= htmlspecialchars($mensagem) ?></p>
-            </div> 
+          <div class="ms-auto">
+          <p class="text-center text-success">Novo utilizador registado com sucesso...</p>
+          </div> 
           <?php endif; ?>
           <input type="submit" name="registar" value="Registar" class="btn btn-primary w-100">
         </form>

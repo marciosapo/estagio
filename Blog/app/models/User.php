@@ -95,13 +95,13 @@ class User {
         if ($exists > 0) {
             return ['erro' => 'Nome de utilizador ou email já existe'];
         }
-
+        $hash_password = password_hash($pass, PASSWORD_DEFAULT);
         $query = "INSERT INTO users(username, nome, email, pass) VALUES(:user, :nome, :email, :pass)";
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':user', $username);
         $stmt->bindParam(':nome', $nome);
         $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':pass', $pass);
+        $stmt->bindParam(':pass', $hash_password);
         try {
             if ($stmt->execute()) {
                 return ['mensagem' => 'Novo utilizador registado com sucesso'];
@@ -134,11 +134,12 @@ class User {
                 pass = :pass
             WHERE id = :id
         ";
-    
+        
+        $hash_password = password_hash($data['pass'], PASSWORD_DEFAULT);
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':nome', $data['nome']);
         $stmt->bindParam(':email', $data['email']);
-        $stmt->bindParam(':pass', $data['pass']);
+        $stmt->bindParam(':pass', $hash_password);
         $stmt->bindParam(':id', $id_user);
     
         try {
@@ -180,7 +181,7 @@ class User {
         $stmt->bindParam(':username', $user);
         $stmt->execute();
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$userData || $pass !== $userData['pass']) {
+        if (!$userData || !password_verify($pass, $userData['pass'])) {
             return ['error' => 'Login incorrecto!'];
         }
         $checkTokenQuery = "SELECT * FROM tokens WHERE username = :username AND expira > NOW() LIMIT 1";

@@ -52,11 +52,14 @@ class BlogController extends Controller {
                     $titulo = $_POST['titulo'];
                     $conteudo = $_POST['comment'];
                     $id = $_POST['id'];
-
+                    $id_parent = null;
+                    if(isset($_POST['id_parent'])) { 
+                        $id_parent = $_POST['id_parent'];
+                    } 
                     if (empty($titulo) || empty($conteudo)) {
                         $erro = 'Título e conteúdo não podem estar vazios';
                     } else {
-                        $resultado = $this->postModel->criarComentario($titulo, $conteudo, $id, $token);
+                        $resultado = $this->postModel->criarComentario($titulo, $conteudo, $id, $token, $id_parent);
                         if (!$resultado) {
                             $erro = 'Erro ao criar comentário';
                         }
@@ -104,7 +107,7 @@ class BlogController extends Controller {
             } 
             $view = '../app/views/novoPost.php';
             require '../app/views/layout.php';
-         } else {
+        } else {
             header("Location: /Blog/");
             exit;
         }

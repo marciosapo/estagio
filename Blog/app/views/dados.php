@@ -31,7 +31,7 @@
           </div> 
 <?php elseif(isset($sucesso) && $sucesso): ?>
           <div class="ms-auto">
-          <p class="text-center text-danger">Dados atualizados com sucesso...</p>
+          <p class="text-center text-success">Dados atualizados com sucesso...</p>
           </div> 
           <?php endif; ?>
           <input type="submit" class="btn btn-primary w-100" name="atualizarDados" value="Atualizar">

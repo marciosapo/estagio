@@ -13,9 +13,6 @@ create table if not exists users(
 	criado timestamp default current_timestamp,
     imagem LONGBLOB
 );
-INSERT INTO users (username, email, nome, pass) VALUES('root', 'root@root.com', 'root', '1234'),
-('marcio', 'marcio@root.com', 'marcio', '1234'),
-('rui', 'rui@root.com', 'rui', '1234');
 
 drop table if exists posts;
 create table if not exists posts(
@@ -33,7 +30,6 @@ create table if not exists comentarios(
     id_user int,
     id_post int,
     id_parent int,
-    title varchar(255),
     comentario TEXT NOT NULL,
     post_data timestamp default current_timestamp,
     FOREIGN KEY (id_user) REFERENCES users(id),
