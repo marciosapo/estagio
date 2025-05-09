@@ -3,7 +3,7 @@
     <div class="col-md-6 d-none d-md-block image-side"><img src="https://www.itinsight.pt/img/uploads/750x421_abbe7a45b9bf7edce6472496ff1614f5.jpg" width="100%" height="100%"></div>
     <div class="col-md-6 d-flex align-items-center justify-content-center">
       <div class="form-card w-75">
-        <h4 class="text-center mb-4">Novo Registo</h4>
+        <h4 class="text-center mb-4 text-primary">Novo Registo</h4>
         <form method="POST" action="/Blog/registar/">
           <div class="mb-3">
             <label for="username" class="form-label">Username</label>

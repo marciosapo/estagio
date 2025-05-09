@@ -22,6 +22,10 @@
             <input type="password" value="<?php echo htmlspecialchars($result['pass']); ?>" name="pass" class="form-control" id="pass" required maxlength="255">
           </div>
           <div class="mb-3">
+            <label for="pass" class="form-label">Nível</label>
+            <input type="text" value="<?php echo htmlspecialchars($result['nivel']); ?>" name="nivel" class="form-control" id="nivel" required maxlength="255" readonly>
+          </div>
+          <div class="mb-3">
             <label for="token" class="form-label">Token Ativo</label>
             <input type="text" value="<?php echo htmlspecialchars($result['token']); ?>" name="token" class="form-control" id="token" required maxlength="255" readonly>
           </div>

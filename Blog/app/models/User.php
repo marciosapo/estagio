@@ -1,6 +1,7 @@
 <?php 
 
 require_once '../app/core/Database.php';
+require_once '../app/config/config.php';
 
 class User {
     private $db;
@@ -15,6 +16,7 @@ class User {
                 users.email,
                 users.nome,
                 users.criado,
+                users.nivel,
                 tokens.token As user_token,
                 tokens.expira AS user_token_expira
             FROM users
@@ -34,6 +36,7 @@ class User {
                     'email' => $row['email'],
                     'nome' => $row['nome'],
                     'criado' => $row['criado'],
+                    'nivel' => $row['nivel'], 
                     'token' => $row['user_token'],
                     'token_expira' => $row['user_token_expira'],
                     'token_status' => $status['status']    
@@ -51,6 +54,7 @@ class User {
                 users.email,
                 users.nome,
                 users.criado,
+                users.nivel,
                 users.pass,
                 tokens.token AS user_token,
                 tokens.expira AS user_token_expira
@@ -75,6 +79,7 @@ class User {
                 'email' => $row['email'],
                 'nome' => $row['nome'],
                 'criado' => $row['criado'],
+                'nivel' => $row['nivel'], 
                 'token' => $row['user_token'],
                 'token_expira' => $row['user_token_expira'],
                 'token_status' => $status['status'] ?? null
@@ -96,12 +101,13 @@ class User {
             return ['erro' => 'Nome de utilizador ou email já existe'];
         }
         $hash_password = password_hash($pass, PASSWORD_DEFAULT);
-        $query = "INSERT INTO users(username, nome, email, pass) VALUES(:user, :nome, :email, :pass)";
+        $query = "INSERT INTO users(username, nome, email, pass, nivel) VALUES(:user, :nome, :email, :pass, :nivel)";
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':user', $username);
         $stmt->bindParam(':nome', $nome);
         $stmt->bindParam(':email', $email);
         $stmt->bindParam(':pass', $hash_password);
+        $stmt->bindParam(':nivel', "User");
         try {
             if ($stmt->execute()) {
                 return ['mensagem' => 'Novo utilizador registado com sucesso'];
@@ -153,6 +159,90 @@ class User {
         }
     }
     
+    public function recriarDB($data){
+        $id_user = $this->verificarToken($data['token']);
+        if (!$id_user) {
+            return ['erro' => 'Token inválido ou expirado'];
+        }
+        $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
+        $checkStmt = $this->db->prepare($checkQuery);
+        $checkStmt->bindParam(':id_user', $id_user);
+        $checkStmt->execute();
+        $nivel = $checkStmt->fetchColumn();
+        if ($nivel !== 'Owner') {
+            return ['erro' => 'Apenas utilizadores com nível Owner podem realizar esta operação.'];
+        }
+        $dsn = 'mysql:host=localhost';
+        $user = 'root';
+        $pass = '';
+        try {
+            $dsn = 'mysql:host=' . DB_HOST . ';port=' . DB_PORT . ';dbname=' . DB_NAME;
+            $pdo = new PDO($dsn, DB_USER, DB_PASS);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $pdo->exec("DROP DATABASE IF EXISTS blog");
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS blog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $pdo->exec("USE blog");
+            $pdo->exec("
+                DROP TABLE IF EXISTS users;
+                CREATE TABLE IF NOT EXISTS users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(50) NOT NULL UNIQUE,
+                    email VARCHAR(100) NOT NULL UNIQUE,
+                    nome VARCHAR(100) NOT NULL,
+                    pass VARCHAR(255) NOT NULL,
+                    criado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    nivel ENUM('Owner', 'Admin', 'User'),
+                    imagem LONGBLOB
+                );
+            ");
+            $pdo->exec("
+                DROP TABLE IF EXISTS posts;
+                CREATE TABLE IF NOT EXISTS posts (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    id_user INT,
+                    title VARCHAR(255),
+                    post TEXT NOT NULL,
+                    post_data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (id_user) REFERENCES users(id)
+                );
+            ");
+            $pdo->exec("
+                DROP TABLE IF EXISTS comentarios;
+                CREATE TABLE IF NOT EXISTS comentarios (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    id_user INT,
+                    id_post INT,
+                    id_parent INT,
+                    comentario TEXT NOT NULL,
+                    post_data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (id_user) REFERENCES users(id),
+                    FOREIGN KEY (id_post) REFERENCES posts(id)
+                );
+            ");
+            $pdo->exec("
+                DROP TABLE IF EXISTS tokens;
+                CREATE TABLE IF NOT EXISTS tokens (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    token VARCHAR(255) NOT NULL,
+                    username VARCHAR(50) NOT NULL UNIQUE,
+                    expira DATETIME NOT NULL
+                );
+            ");
+            $stmt = $pdo->prepare("INSERT INTO users (username, email, nome, pass, nivel) VALUES (?, ?, ?, ?, ?)");
+            $users = [
+                ['root', 'root@root.com', 'root', password_hash('1234', PASSWORD_DEFAULT), 'Owner'],
+                ['marcio', 'marcio@root.com', 'marcio', password_hash('1234', PASSWORD_DEFAULT), 'Owner'],
+                ['rui', 'rui@root.com', 'rui', password_hash('1234', PASSWORD_DEFAULT), 'User']
+            ];
+
+            foreach ($users as $user) {
+                $stmt->execute($user);
+            }
+            return ['mensagem' => 'Base de dados e tabelas criadas com sucesso. Utilizadores inseridos com password segura.'];
+        } catch (PDOException $e) {
+            return ['erro' => 'ERRO: ' . $e->getMessage()];
+        }
+    } 
     public function renovarToken($user){
         $checkTokenQuery = "SELECT * FROM tokens WHERE username = :username AND expira > NOW() LIMIT 1";
         $checkTokenStmt = $this->db->prepare($checkTokenQuery);
@@ -176,7 +266,7 @@ class User {
     }
     public function getToken($user, $pass){
         $this->checkToken($user);
-        $query = "SELECT id, username, pass FROM users WHERE username = :username";
+        $query = "SELECT id, username, pass, nivel FROM users WHERE username = :username";
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':username', $user);
         $stmt->execute();
@@ -201,9 +291,12 @@ class User {
         $tokenStmt->bindParam(':username', $userData['username']);
         $tokenStmt->bindParam(':token', $token);
         $tokenStmt->bindParam(':expira', $termina);
-        
         if ($tokenStmt->execute()) {
-            return ['message' => 'Token gerado com sucesso', 'token' => $token];
+            return [
+                'message' => 'Token gerado com sucesso',
+                'token' => $token,
+                'nivel' => $userData['nivel']
+            ];
         } else {
             return ['error' => 'Erro ao gerar o token'];
         }

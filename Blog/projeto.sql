@@ -11,8 +11,13 @@ create table if not exists users(
     nome varchar(100) NOT NULL,
 	pass varchar(255) NOT NULL,
 	criado timestamp default current_timestamp,
+    nivel enum('Owner', 'Admin', 'User'),
     imagem LONGBLOB
 );
+
+INSERT INTO users (username, email, nome, pass) VALUES('root', 'root@root.com', 'root', '1234'),
+('marcio', 'marcio@root.com', 'marcio', '1234'),
+('rui', 'rui@root.com', 'rui', '1234');
 
 drop table if exists posts;
 create table if not exists posts(
@@ -23,6 +28,7 @@ create table if not exists posts(
     post_data timestamp default current_timestamp,
     FOREIGN KEY (id_user) REFERENCES users(id)
 );
+
 
 drop table if exists comentarios;
 create table if not exists comentarios(

@@ -311,6 +311,14 @@ class Post {
         if (!$id_user) {
             $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
         }
+        $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
+        $checkStmt = $this->db->prepare($checkQuery);
+        $checkStmt->bindParam(':id_user', $id_user);
+        $checkStmt->execute();
+        $nivel = $checkStmt->fetchColumn();
+        if ($nivel !== 'Owner') {
+            return ['erro' => 'Apenas utilizadores com nível Owner podem realizar esta operação.'];
+        }
         $stmt = $this->db->prepare("INSERT INTO posts (title, post, id_user, post_data) VALUES (?, ?, ?, NOW())");
         $stmt->execute([$title, $post, $id_user]);
     
@@ -322,23 +330,28 @@ class Post {
         if (!$id_user) {
             $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
         }
+        $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
+        $checkStmt = $this->db->prepare($checkQuery);
+        $checkStmt->bindParam(':id_user', $id_user);
+        $checkStmt->execute();
+        $nivel = $checkStmt->fetchColumn();
+        if ($nivel !== 'Owner') {
+            return ['erro' => 'Apenas utilizadores com nível Owner podem realizar esta operação.'];
+        }
         $verifica = $this->db->prepare("SELECT id, id_user FROM posts WHERE id = :id_post");
         $verifica->bindParam(':id_post', $id_post, PDO::PARAM_INT);
         $verifica->execute();
         if ($verifica->rowCount() == 0) {
-            $this->sendJsonResponse(['erro' => 'Post não encontrado'], 404);
+            return ['erro' => 'Post não encontrado'];
         }
         $post = $verifica->fetch(PDO::FETCH_ASSOC);
-        if ($post['id_user'] != $id_user) {
-            $this->sendJsonResponse(['erro' => 'Acesso negado. Não és o owner do post.'], 403);
-        }
         $apagarComentarios = $this->db->prepare("DELETE FROM comentarios WHERE id_parent = :id_post");
         $apagarComentarios->bindParam(':id_post', $id_post, PDO::PARAM_INT);
         $apagarComentarios->execute();
         $apagarPost = $this->db->prepare("DELETE FROM posts WHERE id = :id_post");
         $apagarPost->bindParam(':id_post', $id_post, PDO::PARAM_INT);
         $apagarPost->execute();
-        $this->sendJsonResponse(['sucesso' => 'Post e comentários apagados com sucesso'], 200);
+        return ['sucesso' => 'Post e comentários apagados com sucesso'];
     }
 
     public function criarComentario($title, $comentario, $id_post, $token, $id_parent = null) {

@@ -20,6 +20,7 @@ class BlogController extends Controller {
     }
 
     public function index(){
+        
         if(!isset($_POST['pesquisa']) && !isset($_POST['recente'])){
             $posts = $this->postModel->getAllPosts("ASC");
         }else if(isset($_POST['recente'])){
@@ -49,8 +50,8 @@ class BlogController extends Controller {
                 if (!$id_user) {
                     $erro = 'Token inválido ou expirado';
                 } else {
-                    $titulo = $_POST['titulo'];
-                    $conteudo = $_POST['comment'];
+                    $titulo = trim($_POST['titulo']);
+                    $conteudo = trim($_POST['comment']);
                     $id = $_POST['id'];
                     $id_parent = null;
                     if(isset($_POST['id_parent'])) { 
@@ -68,7 +69,13 @@ class BlogController extends Controller {
                 $post = $this->postModel->getPostById($_POST['id']);
                 $view = '../app/views/verPost.php';
                 require '../app/views/layout.php';
-            } 
+            }else{
+                unset($_POST['respondeid']);
+                unset($_POST['editarid']);
+                $post = $this->postModel->getPostById($_POST['id']);
+                $view = '../app/views/verPost.php';
+                require '../app/views/layout.php';
+            }   
         }else { 
             if (isset($_POST['id'])) {
                 $post = $this->postModel->getPostById($_POST['id']);
@@ -126,6 +133,7 @@ class BlogController extends Controller {
             if (isset($result['token'])) {
                 $_SESSION['user'] = $username;
                 $_SESSION['token'] = $result['token'];
+                $_SESSION['nivel'] = $result['nivel'];  
                 var_dump($_SESSION['user']);
                 header("Location: /Blog/");
                 exit;
@@ -134,6 +142,7 @@ class BlogController extends Controller {
                 if($result['error'] == "Já existe um token ativo para este usuário") {
                     $_SESSION['user'] = $username;
                     $_SESSION['token'] = $result['token'];
+                    $_SESSION['nivel'] = $result['nivel'];
                     var_dump($_SESSION['user']);
                     header("Location: /Blog/");
                     exit;
@@ -155,6 +164,7 @@ class BlogController extends Controller {
             if (isset($result['token'])) {
                 unset($_SESSION['user']);
                 unset($_SESSION['token']);
+                unset($_SESSION['nivel']);
                 header("Location: /Blog/");
                 exit;
             } else {

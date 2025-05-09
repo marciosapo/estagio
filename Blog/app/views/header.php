@@ -5,8 +5,8 @@
     
     <form method="POST" action="/Blog/" class="d-flex align-items-center ml-auto">
       <?php if (!isset($_SESSION['user'])): ?>
-        <a href="/Blog/login" class="btn btn-secondary ml-2">Login</a>
-        <a href="/Blog/registar" class="btn btn-secondary ml-2 mr-2">Registar</a>
+        <a href="/Blog/login" class="btn btn-secondary me-2">Login</a>
+        <a href="/Blog/registar" class="btn btn-secondary me-2">Registar</a>
       <?php else: ?>
         <div class="btn-group dropstart px-2">
           <button class="btn btn-secondary dropdown-toggle bg-dark border-0" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
