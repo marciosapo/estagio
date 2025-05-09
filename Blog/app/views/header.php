@@ -10,7 +10,14 @@
       <?php else: ?>
         <div class="btn-group dropstart px-2">
           <button class="btn btn-secondary dropdown-toggle bg-dark border-0" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-              <img src="https://cdn-icons-png.flaticon.com/512/9187/9187604.png" alt="User" width="30" height="30" class="me-2">
+          <?php
+              $avatar = avatar();
+              if ($avatar == "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVQYV2NgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=") {
+                  $avatar = "https://cdn-icons-png.flaticon.com/512/9187/9187604.png";
+              }
+            ?>
+            <img src="<?php echo $avatar; ?>" alt="User" width="30" height="30" class="me-2 rounded-circle">
+            
               <?php echo htmlspecialchars($_SESSION['user']); ?>
           </button>
           <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">

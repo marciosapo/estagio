@@ -43,6 +43,24 @@ class PostsController extends Controller {
                 $this->sendJsonResponse(['mensagem' => 'Post criado com sucesso', 'id' => $result], 201);
             }
         }
+        if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            if(!isset($input['token'])){
+                $this->sendJsonResponse(['erro' => 'Falta o Token'], 400);
+            } 
+            if (!isset($input['title'], $input['post'])) {
+                $this->sendJsonResponse(['erro' => 'Falta campos'], 400);
+            }
+            if (!isset($input['id'])){
+                $this->sendJsonResponse(['erro' => 'Falta id do Post'], 400);
+            }
+            $result = $this->postModel->editarPost($input['id'], $input['title'], $input['post'], $input['token']);
+            if (isset($result['erro'])) {
+                $this->sendJsonResponse(['erro' => $result['erro']], 400);
+            } else {
+                $this->sendJsonResponse(['mensagem' => 'Post editado com sucesso'] , 201);
+            }
+        }
         if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
             $input = json_decode(file_get_contents('php://input'), true);
             if (!isset($input['token'])) {

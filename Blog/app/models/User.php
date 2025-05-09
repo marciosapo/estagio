@@ -56,6 +56,7 @@ class User {
                 users.criado,
                 users.nivel,
                 users.pass,
+                users.imagem,
                 tokens.token AS user_token,
                 tokens.expira AS user_token_expira
             FROM users
@@ -81,6 +82,7 @@ class User {
                 'criado' => $row['criado'],
                 'nivel' => $row['nivel'], 
                 'token' => $row['user_token'],
+                'imagem' => $row['imagem'], 
                 'token_expira' => $row['user_token_expira'],
                 'token_status' => $status['status'] ?? null
             ];
@@ -137,15 +139,26 @@ class User {
             UPDATE users SET 
                 nome = :nome,
                 email = :email,
-                pass = :pass
+                pass = :pass,
+                imagem = :imagem
             WHERE id = :id
         ";
-        
-        $hash_password = password_hash($data['pass'], PASSWORD_DEFAULT);
+        if (!empty($data['pass'])) {
+            if (!preg_match('/^\$2y\$/', $data['pass'])) {
+                $hash_password = password_hash($data['pass'], PASSWORD_DEFAULT);
+            } else {
+                $hash_password = $data['pass'];
+            }
+        }
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':nome', $data['nome']);
         $stmt->bindParam(':email', $data['email']);
         $stmt->bindParam(':pass', $hash_password);
+        if (isset($data['imagem']) && $data['imagem'] !== null) {
+            $stmt->bindParam(':imagem', $data['imagem'], PDO::PARAM_LOB);
+        } else {
+            $stmt->bindValue(':imagem', null, PDO::PARAM_NULL);
+        }
         $stmt->bindParam(':id', $id_user);
     
         try {
@@ -352,7 +365,7 @@ class User {
         return ['status' => 'Token ainda válido.'];
     }
     function generateToken($length = 32) {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+-=[]{}|;:,.<>?';
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_-=[]{}|;:.?';
         $token = '';
         for ($i = 0; $i < $length; $i++) {
             $randomIndex = array_rand(str_split($characters));
@@ -360,6 +373,7 @@ class User {
         }
         return $token;
     }
+
 
     public function verificarToken($token) {
         $query = "
@@ -369,13 +383,15 @@ class User {
             WHERE tokens.token = :token AND tokens.expira > NOW()
             LIMIT 1
         ";
+        $token = trim($token);
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':token', $token);
         $stmt->execute();
-        
         if ($stmt->rowCount() > 0) {
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             return $result['id_user'];
+        }else {
+            echo 'Token inválido ou expirado. <br>';
         }
         return false;
     }

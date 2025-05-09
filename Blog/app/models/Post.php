@@ -325,6 +325,28 @@ class Post {
         return $this->db->lastInsertId();
     }
 
+    public function editarPost($id_post, $title, $post_content, $token) {
+        $id_user = $this->verificarToken($token);
+        if (!$id_user) {
+            return ['erro' => 'Token inválido ou expirado'];
+        }
+        $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
+        $checkStmt = $this->db->prepare($checkQuery);
+        $checkStmt->bindParam(':id_user', $id_user);
+        $checkStmt->execute();
+        $nivel = $checkStmt->fetchColumn();
+        if ($nivel !== 'Owner' && $nivel !== 'Admin') {
+            return ['erro' => 'Apenas utilizadores com nível Owner ou Admin podem editar posts.'];
+        }
+        $stmt = $this->db->prepare("UPDATE posts SET title = ?, post = ? WHERE id = ?");
+        $success = $stmt->execute([$title, $post_content, $id_post]);
+        if ($success) {
+            return ['sucesso' => 'Post editado com sucesso'];
+        } else {
+            return ['erro' => 'Erro ao editar o post'];
+        }
+    }
+
     public function apagarPost($id_post, $token) {
         $id_user = $this->verificarToken($token);
         if (!$id_user) {
@@ -354,7 +376,7 @@ class Post {
         return ['sucesso' => 'Post e comentários apagados com sucesso'];
     }
 
-    public function criarComentario($title, $comentario, $id_post, $token, $id_parent = null) {
+    public function criarComentario($comentario, $id_post, $token, $id_parent = null) {
         $id_user = $this->verificarToken($token);
         if (!$id_user) {
             $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
@@ -381,7 +403,7 @@ class Post {
         return $stmt->execute() ? $this->db->lastInsertId() : false;
     }
 
-    public function apagarComentario($id_comentario, $token, $id_parent = null) {
+    public function apagarComentario($id_comentario, $token) {
         $id_user = $this->verificarToken($token);
         if (!$id_user) {
             $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
@@ -394,20 +416,20 @@ class Post {
         }
         $comentario = $verifica->fetch(PDO::FETCH_ASSOC);
         if (!empty($comentario['id_parent'])) {
+            $id_parent = $comentario['id_parent'];
             if ($id_parent) {
                 $verificaPai = $this->db->prepare("SELECT id_user FROM comentarios WHERE id = :id_parent");
                 $verificaPai->bindParam(':id_parent', $id_parent, PDO::PARAM_INT);
                 $verificaPai->execute();
-    
                 if ($verificaPai->rowCount() == 0) {
-                    $this->sendJsonResponse(['erro' => 'Comentário pai não encontrado'], 404);
+                    return ['erro' => 'Comentário pai não encontrado'];
                 }
             } else {
-                $this->sendJsonResponse(['erro' => 'Comentário pai não foi especificado.'], 400);
+                return ['erro' => 'Comentário pai não foi especificado.'];
             }
         } else {
             if ($comentario['id_user'] != $id_user) {
-                $this->sendJsonResponse(['erro' => 'Acesso negado. Não és o dono do comentário.'], 403);
+                return ['erro' => 'Acesso negado. Não és o dono do comentário.'];
             }
         }
         if (empty($comentario['id_parent'])) {
@@ -419,33 +441,32 @@ class Post {
         $apagarComentario->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
         $apagarComentario->execute();
         $mensagem = empty($comentario['id_parent']) ? 'Comentário e respostas apagados com sucesso' : 'Resposta apagada com sucesso';
-        $this->sendJsonResponse(['sucesso' => $mensagem], 200);
+        return ['sucesso' => $mensagem];
     }
 
     public function atualizarComentario($id_comentario, $comentario, $token) {
         $id_user = $this->verificarToken($token);
         if (!$id_user) {
-            $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+            return ['erro' => 'Token inválido ou expirado'];
         }
         $verifica = $this->db->prepare("SELECT id_user FROM comentarios WHERE id = :id_comentario");
         $verifica->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
         $verifica->execute();
-    
         if ($verifica->rowCount() == 0) {
-            $this->sendJsonResponse(['erro' => 'Comentário não encontrado'], 404);
+            return ['erro' => 'Comentário não encontrado'];
         }
         $comentario_data = $verifica->fetch(PDO::FETCH_ASSOC);
         if ($comentario_data['id_user'] !== $id_user) {
-            $this->sendJsonResponse(['erro' => 'Não és o dono do comentário'], 404);
+            return ['erro' => 'Não és o dono do comentário'];
         }
         $query = "UPDATE comentarios SET comentario = :comentario, post_data = NOW() WHERE id = :id_comentario";
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':comentario', $comentario);
         $stmt->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
         if($stmt->execute()){
-            $this->sendJsonResponse(['sucesso' => 'Comentário atualizado com sucesso'], 200);
+            return ['sucesso' => 'Comentário atualizado com sucesso'];
         }else{
-            this->sendJsonResponse(['erro' => 'Falha a atualizar o comentário'], 200);
+            return ['erro' => 'Falha a atualizar o comentário'];
         }    
     }
 

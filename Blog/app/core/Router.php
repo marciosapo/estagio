@@ -5,6 +5,13 @@ class Router {
     public function route() {
         $url = isset($_GET['url']) ? rtrim($_GET['url'], '/') : '';
         $url_parts = explode('/', $url);
+        if ($url_parts[0] === 'avatar') {
+            require_once '../app/controllers/BlogController.php';
+            $controller = new BlogController();
+            $controller->avatar();
+    
+            return;
+        }
         
         $first_segment = array_shift($url_parts);
     

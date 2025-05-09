@@ -11,7 +11,7 @@ class BlogController extends Controller {
             $this->renovarToken();
         }
     }
-    
+
     private function renovarToken() {
         $result = $this->userModel->renovarToken($_SESSION['user']);
         if ($result) {
@@ -39,43 +39,11 @@ class BlogController extends Controller {
     public function verPost()
     {
         require_once '../app/helpers/tempo.php';
+        require_once '../app/helpers/refresh_pagina.php';
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['titulo'], $_POST['comment'], $_POST['id'])) {
-            if (isset($_POST['novoComentario'])) {
-                if (!isset($_SESSION['user'], $_SESSION['token'])) {
-                    header("Location: /Blog/");
-                    exit;
-                }
-                $token = $_SESSION['token'];
-                $id_user = $this->userModel->verificarToken($token);
-                if (!$id_user) {
-                    $erro = 'Token inválido ou expirado';
-                } else {
-                    $titulo = trim($_POST['titulo']);
-                    $conteudo = trim($_POST['comment']);
-                    $id = $_POST['id'];
-                    $id_parent = null;
-                    if(isset($_POST['id_parent'])) { 
-                        $id_parent = $_POST['id_parent'];
-                    } 
-                    if (empty($titulo) || empty($conteudo)) {
-                        $erro = 'Título e conteúdo não podem estar vazios';
-                    } else {
-                        $resultado = $this->postModel->criarComentario($titulo, $conteudo, $id, $token, $id_parent);
-                        if (!$resultado) {
-                            $erro = 'Erro ao criar comentário';
-                        }
-                    }
-                }
-                $post = $this->postModel->getPostById($_POST['id']);
-                $view = '../app/views/verPost.php';
-                require '../app/views/layout.php';
-            }else{
-                unset($_POST['respondeid']);
-                unset($_POST['editarid']);
-                $post = $this->postModel->getPostById($_POST['id']);
-                $view = '../app/views/verPost.php';
-                require '../app/views/layout.php';
-            }   
+            $post = $this->postModel->getPostById($_POST['id']);
+            $view = '../app/views/verPost.php';
+            require '../app/views/layout.php';
         }else { 
             if (isset($_POST['id'])) {
                 $post = $this->postModel->getPostById($_POST['id']);
@@ -217,14 +185,21 @@ class BlogController extends Controller {
             $token = $_SESSION['token'];
             $id_user = $this->userModel->verificarToken($token);
             if (!$id_user) {
-                $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+                return ['erro' => 'Token inválido ou expirado'];
             }
             if (isset($_POST['atualizarDados'])) {
+                if (isset($_FILES['imagem']) && $_FILES['imagem']['error'] === UPLOAD_ERR_OK) {
+                    $imagem_binaria = file_get_contents($_FILES['imagem']['tmp_name']);
+                } else {
+                    $imagem_binaria = null;
+                }
                 $data = [
                     'username' => $_POST['username'],
                     'nome' => $_POST['nome'],
                     'email' => $_POST['email'],
                     'pass' => $_POST['pass'],
+                    'nivel' => $_POST['nivel'], 
+                    'imagem' => $imagem_binaria, 
                     'token' => $_POST['token']
                 ];
                 $result = $this->userModel->updateUser($data);
@@ -240,6 +215,8 @@ class BlogController extends Controller {
             $result['email'] = $_POST['email'];
             $result['nome'] = $_POST['nome'];
             $result['pass'] = $_POST['pass'];
+            $result['nivel'] = $_POST['nivel'];
+            $result['imagem'] = $imagem_binaria;    
             $result['token'] = $_POST['token'];
             $view = '../app/views/dados.php';
             require '../app/views/layout.php';

@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once '../app/helpers/verificar_sessao.php';
+require_once '../app/helpers/avatar.php';
 require_once '../app/core/Router.php';
 
 $router = new Router();

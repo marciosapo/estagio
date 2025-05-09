@@ -116,7 +116,7 @@ class UsersController extends Controller {
                 $this->sendJsonResponse($users);
             }
         }
-    } 
+    }
 }
 
 ?>
