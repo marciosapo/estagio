@@ -9,6 +9,9 @@ class User {
     public function __construct() {
         $this->db = Database::getInstance();
     }
+    public function verificarTokenUser($token) {
+        return verificarToken($token, $this->db);
+    } 
     public function getUsers() {
         $query = "
             SELECT 
@@ -118,9 +121,44 @@ class User {
             return ['erro' => 'Erro: ' . $e->getMessage()];
         }
     }
+
+    public function apagarUser($username, $token) {
+        $id_user = $this->verificarTokenUser($token);
+        if (!$id_user) {
+            return ['erro' => 'Token inválido ou expirado'];
+        }
+        $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
+        $checkStmt = $this->db->prepare($checkQuery);
+        $checkStmt->bindValue(':id_user', trim($id_user), PDO::PARAM_INT);
+        $checkStmt->execute();
+        $nivel = $checkStmt->fetchColumn();
+        if ($nivel !== 'Owner') {
+            return ['erro' => 'Apenas utilizadores com nível Owner podem realizar esta operação.'];
+        }
+        $checkQuery = "SELECT COUNT(*) FROM users WHERE username = :user";
+        $checkStmt = $this->db->prepare($checkQuery);
+        $checkStmt->bindValue(':user', trim($username), PDO::PARAM_STR);
+        $checkStmt->execute();
+        $exists = $checkStmt->fetchColumn();
+        if ($exists <= 0) {
+            return ['erro' => 'Nome de utilizador não existe'];
+        }
+        $query = "DELETE FROM users WHERE username = :username";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':username', trim($username), PDO::PARAM_STR);
+        try {
+            if ($stmt->execute()) {
+                return ['mensagem' => 'Utilizador apagado com sucesso ' . $username];
+            } else {
+                return ['erro' => 'Erro ao apagar utilizador'];
+            }
+        } catch (Exception $e) {
+            return ['erro' => 'Erro: ' . $e->getMessage()];
+        }
+    }
     
     public function addAdmin($user, $token){
-        $id_user = $this->verificarToken($token, $db);
+        $id_user = $this->verificarTokenUser($token);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
         }
@@ -169,7 +207,7 @@ class User {
         }
     } 
     public function updateUser($data) {
-        $id_user = $this->verificarToken($data['token'], $db);
+        $id_user = $this->verificarTokenUser($data['token']);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
         }
@@ -221,7 +259,7 @@ class User {
     }
     
     public function recriarDB($data){
-        $id_user = $this->verificarToken($data['token'], $db);
+        $id_user = $this->verificarTokenUser($data['token']);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
         }
@@ -343,7 +381,7 @@ class User {
         if ($existingToken) {
             return ['error' => 'Já existe um token ativo para este usuário'];
         }
-        $token = $this->generateToken(32);
+        $token = generateToken(32);
         $datetime = new DateTime('now', new DateTimeZone('Europe/Lisbon'));
         $datetime->add(new DateInterval('PT1H'));
         $termina = $datetime->format('Y-m-d H:i:s');

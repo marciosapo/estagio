@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="UTF-8">
+    <title>Documentação da API - Utilizadores e Posts</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        font-family: Arial, sans-serif;
+      }
+  
+      nav {
+        width: 250px;
+        background-color: #f4f4f4;
+        padding: 20px;
+        height: 100vh;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        position: fixed;
+      }
+  
+      nav h2 {
+        margin-top: 0;
+        font-size: 18px;
+        color: #007bff;
+      }
+  
+      nav ul {
+        list-style: none;
+        padding-left: 15px;
+      }
+  
+      nav li {
+        margin: 5px 0;
+      }
+  
+      nav a {
+        text-decoration: none;
+        color: #333;
+      }
+  
+      nav a:hover {
+        color: #007bff;
+      }
+  
+      .content {
+        margin-left: 270px;
+        padding: 20px;
+      }
+  
+      h1 {
+        color: #007bff;
+      }
+      pre {
+        background-color: #f4f4f4;
+        padding: 10px;
+        border-radius: 5px;
+        max-height: 300px;
+        overflow-y: scroll;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      code {
+        color: #2a2a2a;
+        font-size: 14px;
+      }
+      .example {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 10px;
+        margin: 10px 0;
+    }
+    </style>
+  </head>
+  <body>
+  
+    <nav>
+      <h2>Gestão de Utilizadores</h2>
+      <ul>
+        <li><a href="#registar">Registar</a></li>
+        <li><a href="#login">Login</a></li>
+        <li><a href="#logout">Logout</a></li>
+        <li><a href="#listar-utilizadores">Listar utilizadores</a></li>
+        <li><a href="#atualizar-utilizador">Atualizar utilizador</a></li>
+        <li><a href="#tornar-admin">Tornar administrador</a></li>
+        <li><a href="#apagar-utilizador">Eliminar utilizador</a></li>
+        <li><a href="#recriarDB">Recriar Base de Dados</a></li>
+      </ul>
+  
+      <h2>Gestão de Posts</h2>
+      <ul>
+        <li><a href="#criar-post">Criar post</a></li>
+        <li><a href="#listar-posts">Listar posts</a></li>
+        <li><a href="#atualizar-post">Atualizar post</a></li>
+        <li><a href="#eliminar-post">Eliminar post</a></li>
+        <li><a href="#adicionar-comentario">Adicionar comentário</a></li>
+        <li><a href="#eliminar-comentario">Eliminar comentário</a></li>
+        <li><a href="#atualizar-comentario">Atualizar comentário/resposta</a></li>
+      </ul>
+    </nav>
+  
+    <div class="content">
+
+    <h1>Documentação da API - Gestão de Utilizadores</h1>
+
+    <p>Esta API permite gerir utilizadores, incluindo funcionalidades de registo, login, atualização de dados e atribuição de permissões de administrador.</p>
+
+    <!-- Registo -->
+    <div class="section" id="registar">
+        <h2>1. Registo de Utilizador</h2>
+        <p>Cria um novo utilizador na plataforma.</p>
+        <h3>Requisição:</h3>
+        <p><strong>POST</strong> para /api/users/registo</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "username": "exemploUser",
+    "nome": "Nome do Exemplo",
+    "email": "exemplo@dominio.com",
+    "pass": "senhaForte123"
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X POST -H "Content-Type: application/json" -d '{"username": "exemploUser", "nome": "Nome do Exemplo", "email": "exemplo@dominio.com", "pass": "senhaForte123"}' http://localhost/api/users/registo</code>
+        </div>
+    </div>
+
+    <!-- Login -->
+    <div class="section" id="login">
+        <h2>2. Login</h2>
+        <p>Realiza o login de um utilizador e retorna um token de sessão.</p>
+        <h3>Requisição:</h3>
+        <p><strong>POST</strong> para /api/users/login</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "user": "exemploUser",
+    "pass": "senhaForte123"
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X POST -H "Content-Type: application/json" -d '{"user": "exemploUser", "pass": "senhaForte123"}' http://localhost/api/users/login</code>
+        </div>
+    </div>
+
+    <!-- Logout -->
+    <div class="section" id="logout">
+        <h2>3. Logout</h2>
+        <p>Realiza o logout de um utilizador, removendo o token de sessão.</p>
+        <h3>Requisição:</h3>
+        <p><strong>DELETE</strong> para /api/users/logout</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "user": "exemploUser"
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X DELETE -H "Content-Type: application/json" -d '{"user": "exemploUser"}' http://localhost/api/users/logout</code>
+        </div>
+    </div>
+
+    <!-- Atualização de Utilizador -->
+    <div class="section" id="atualizar-utilizador">
+        <h2>4. Atualizar Utilizador</h2>
+        <p>Atualiza as informações de um utilizador (como nome, email, etc.).</p>
+        <h3>Requisição:</h3>
+        <p><strong>PUT</strong> para /api/users</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "username": "exemploUser",
+    "nome": "Novo Nome",
+    "email": "novoemail@dominio.com",
+    "token": "tokenObtidoNoLogin"
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X PUT -H "Content-Type: application/json" -d '{"username": "exemploUser", "nome": "Novo Nome", "email": "novoemail@dominio.com", "token": "tokenObtidoNoLogin"}' http://localhost/api/users</code>
+        </div>
+    </div>
+
+    <!-- Atribuição de Admin -->
+    <div class="section" id="tornar-admin">
+        <h2>5. Atribuir Permissão de Admin</h2>
+        <p>Atribui permissões de administrador a um utilizador.</p>
+        <h3>Requisição:</h3>
+        <p><strong>PUT</strong> para /api/users/addAdmin</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "username": "exemploUser",
+    "token": "tokenObtidoNoLogin"
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X PUT -H "Content-Type: application/json" -d '{"username": "exemploUser", "token": "tokenObtidoNoLogin"}' http://localhost/api/users/addAdmin</code>
+        </div>
+    </div>
+
+    <!-- Obter Utilizadores -->
+    <div class="section" id="listar-utilizadores">
+        <h2>6. Obter Utilizadores</h2>
+        <p>Obtém uma lista de todos os utilizadores ou um utilizador específico pelo nome de utilizador.</p>
+        <h3>Requisição:</h3>
+        <p><strong>GET</strong> para /api/users ou /api/users/{username}</p>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X GET http://localhost/api/users</code>
+        </div>
+        <div class="example">
+            <code>curl -X GET http://localhost/api/users/exemploUser</code>
+        </div>
+    </div>
+
+    <!-- Apagar Registo de Utilizador -->
+    <div class="section" id="apagar-utilizador">
+      <h2>8. Apagar Registo de Utilizador</h2>
+      <p>Permite apagar a conta de um utilizador. <strong>Apenas o próprio utilizador (owner) pode realizar esta operação.</strong></p>
+
+      <h3>Requisição:</h3>
+      <p><strong>DELETE</strong> para /api/users</p>
+
+      <h3>Exemplo de Payload (JSON):</h3>
+      <pre>
+    {
+      "username": "nomeDeUtilizador",
+      "token": "tokenObtidoNoLogin"
+    }
+      </pre>
+
+      <h3>Exemplo de requisição com cURL:</h3>
+      <div class="example">
+          <code>curl -X DELETE -H "Content-Type: application/json" -d '{"username": "nomeDeUtilizador", "token": "tokenObtidoNoLogin"}' http://localhost/api/users</code>
+      </div>  
+    </div>
+
+    <!-- Recriar Base de Dados -->
+    <div class="section" id="recriarDB">
+      <h2>7. Recriar Base de Dados</h2>
+      <p>Recria a base de dados, eliminando todos os dados existentes. <strong>Apenas disponível para o utilizador proprietário (owner).</strong></p>
+      <h3>Requisição:</h3>
+      <p><strong>POST</strong> para /api/users/recriarDB</p>
+
+      <h3>Exemplo de Payload (JSON):</h3>
+      <pre>
+    {
+      "token": "tokenDoOwner"
+    }
+      </pre>
+
+      <h3>Exemplo de requisição com cURL:</h3>
+      <div class="example">
+          <code>curl -X POST -H "Content-Type: application/json" -d '{"token": "tokenDoOwner"}' http://localhost/api/users/recriarDB</code>
+      </div>
+    </div>
+
+    <h1>Documentação da API - Posts</h1>
+
+    <p>Esta API permite gerir posts e comentários, incluindo criação, atualização e exclusão.</p>
+
+    <!-- Criar Post -->
+    <div class="section" id="criar-post">
+        <h2>1. Criar Post</h2>
+        <p>Cria um novo post.</p>
+        <h3>Requisição:</h3>
+        <p><strong>POST</strong> para /api/posts</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "title": "Título do Post",
+    "post": "Conteúdo do Post",
+    "token": "tokenObtidoNoLogin"
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X POST -H "Content-Type: application/json" -d '{"title": "Título do Post", "post": "Conteúdo do Post", "token": "tokenObtidoNoLogin"}' http://localhost/api/posts</code>
+        </div>
+    </div>
+
+    <!-- Obter Posts -->
+    <div class="section" id="listar-posts">
+        <h2>2. Listar Posts</h2>
+        <p>Obtém uma lista de todos os posts ou um post específico pelo ID.</p>
+        <h3>Requisição:</h3>
+        <p><strong>GET</strong> para /api/posts ou /api/posts/{id}</p>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X GET http://localhost/api/posts</code>
+        </div>
+        <div class="example">
+            <code>curl -X GET http://localhost/api/posts/1</code>
+        </div>
+    </div>
+
+    <!-- Editar Post -->
+    <div class="section" id="atualizar-post">
+        <h2>3. Editar Post</h2>
+        <p>Edita um post existente.</p>
+        <h3>Requisição:</h3>
+        <p><strong>PUT</strong> para /api/posts</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "id": 1,
+    "title": "Título Atualizado",
+    "post": "Conteúdo do Post Atualizado",
+    "token": "tokenObtidoNoLogin"
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X PUT -H "Content-Type: application/json" -d '{"id": 1, "title": "Título Atualizado", "post": "Conteúdo do Post Atualizado", "token": "tokenObtidoNoLogin"}' http://localhost/api/posts</code>
+        </div>
+    </div>
+
+    <!-- Apagar Post -->
+
+    <div class="section" id="eliminar-post">
+        <h2>4. Apagar Post</h2>
+        <p>Apaga um post existente.</p>
+        <h3>Requisição:</h3>
+        <p><strong>DELETE</strong> para /api/posts</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "id_post": 1,
+    "token": "tokenObtidoNoLogin"
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X DELETE -H "Content-Type: application/json" -d '{"id_post": 1, "token": "tokenObtidoNoLogin"}' http://localhost/api/posts</code>
+        </div>
+    </div>
+
+    <!-- Criar Comentário -->
+    <div class="section">
+        <h2>5. Criar Comentário</h2>
+        <p>Cria um novo comentário para um post específico.</p>
+        <h3>Requisição:</h3>
+        <p><strong>POST</strong> para /api/posts/comentario</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "title": "Título do Comentário",
+    "post": "Conteúdo do Comentário",
+    "id_post": 1,
+    "token": "tokenObtidoNoLogin",
+    "id_parent": null
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X POST -H "Content-Type: application/json" -d '{"title": "Título do Comentário", "post": "Conteúdo do Comentário", "id_post": 1, "token": "tokenObtidoNoLogin"}' http://localhost/api/posts/comentario</code>
+        </div>
+    </div>
+
+    <!-- Apagar Comentário -->
+    <div class="section">
+        <h2>6. Apagar Comentário</h2>
+        <p>Apaga um comentário específico.</p>
+        <h3>Requisição:</h3>
+        <p><strong>DELETE</strong> para /api/posts/comentario</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "idcomentario": 1,
+    "token": "tokenObtidoNoLogin",
+    "id_parent": null
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X DELETE -H "Content-Type: application/json" -d '{"idcomentario": 1, "token": "tokenObtidoNoLogin"}' http://localhost/api/posts/comentario</code>
+        </div>
+    </div>
+    <div class="section">
+        <h2>4. Apagar Post</h2>
+        <p>Apaga um post existente.</p>
+        <h3>Requisição:</h3>
+        <p><strong>DELETE</strong> para /api/posts</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "id_post": 1,
+    "token": "tokenObtidoNoLogin"
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X DELETE -H "Content-Type: application/json" -d '{"id_post": 1, "token": "tokenObtidoNoLogin"}' http://localhost/api/posts</code>
+        </div>
+    </div>
+
+    <!-- Criar Comentário -->
+    <div class="section" id="adicionar-comentario">
+        <h2>5. Criar Comentário</h2>
+        <p>Cria um novo comentário para um post específico.</p>
+        <h3>Requisição:</h3>
+        <p><strong>POST</strong> para /api/posts/comentario</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "title": "Título do Comentário",
+    "post": "Conteúdo do Comentário",
+    "id_post": 1,
+    "token": "tokenObtidoNoLogin",
+    "id_parent": null
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X POST -H "Content-Type: application/json" -d '{"title": "Título do Comentário", "post": "Conteúdo do Comentário", "id_post": 1, "token": "tokenObtidoNoLogin"}' http://localhost/api/posts/comentario</code>
+        </div>
+    </div>
+
+    <!-- Apagar Comentário -->
+    <div class="section" id="eliminar-comentario">
+        <h2>6. Apagar Comentário</h2>
+        <p>Apaga um comentário específico.</p>
+        <h3>Requisição:</h3>
+        <p><strong>DELETE</strong> para /api/posts/comentario</p>
+
+        <h3>Exemplo de Payload (JSON):</h3>
+        <pre>
+{
+    "idcomentario": 1,
+    "token": "tokenObtidoNoLogin",
+    "id_parent": null
+}
+        </pre>
+
+        <h3>Exemplo de requisição com cURL:</h3>
+        <div class="example">
+            <code>curl -X DELETE -H "Content-Type: application/json" -d '{"idcomentario": 1, "token": "tokenObtidoNoLogin"}' http://localhost/api/posts/comentario</code>
+        </div>
+    </div>
+    <!-- Atualizar Comentário -->
+    <div class="section" id="atualizar-comentario">
+      <h2>7. Atualizar Comentário</h2>
+      <p>Atualiza o conteúdo de um comentário existente.</p>
+
+      <h3>Requisição:</h3>
+      <p><strong>PUT</strong> para /api/posts/comentario</p>
+
+      <h3>Exemplo de Payload (JSON):</h3>
+      <pre>
+    {
+      "idcomentario": 1,
+      "comentario": "Conteúdo atualizado do comentário",
+      "token": "tokenObtidoNoLogin"
+    }
+      </pre>
+
+      <h3>Exemplo de requisição com cURL:</h3>
+      <div class="example">
+          <code>curl -X PUT -H "Content-Type: application/json" -d '{"idcomentario": 1, "comentario": "Conteúdo atualizado do comentário", "token": "tokenObtidoNoLogin"}' http://localhost/api/posts/comentario</code>
+      </div>  
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

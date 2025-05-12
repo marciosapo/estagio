@@ -63,7 +63,7 @@ class BlogController extends Controller {
                 return ['erro' => 'Dados incompletos'];
             }
             $token = $_SESSION['token'];
-            $id_user = $this->userModel->verificarToken($token);
+            $id_user = $this->userModel->verificarTokenUser($token);
             if (!$id_user) {
                 return ['erro' => 'Token inválido ou expirado'];
             }
@@ -167,7 +167,7 @@ class BlogController extends Controller {
         if (isset($_SESSION['user'])) {
             $sucesso = false;
             $token = $_SESSION['token'];
-            $id_user = $this->userModel->verificarToken($token);
+            $id_user = $this->userModel->verificarTokenUser($token, $this->userModel->db);
             if (!$id_user) {
                 return ['erro' => 'Token inválido ou expirado'];
             }

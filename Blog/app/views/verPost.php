@@ -27,7 +27,7 @@ if(isset($_POST['apagarPost'])){
         exit;
     }else{
         $token = $_SESSION['token'];
-        $id_user = $this->userModel->verificarToken($token);
+        $id_user = $this->userModel->verificarTokenUser($token);
         if (!$id_user) {
             header("Location: /Blog/");
             exit;
@@ -56,7 +56,7 @@ if(isset($_POST['salvarEdicao'])){
         exit;
     }else{
         $token = $_SESSION['token'];
-        $id_user = $this->userModel->verificarToken($token);
+        $id_user = $this->userModel->verificarTokenUser($token);
         if (!$id_user) {
             header("Location: /Blog/");
             exit;
@@ -80,7 +80,7 @@ if (isset($_POST['novoComentario'])) {
         exit;
     }
     $token = $_SESSION['token'];
-    $id_user = $this->userModel->verificarToken($token);
+    $id_user = $this->userModel->verificarTokenUser($token);
     if (!$id_user) {
         $erro = 'Token inválido ou expirado';
     } else {
@@ -107,7 +107,7 @@ if (isset($_POST['novoComentario'])) {
 
 if(isset($_POST['apagarComentario'])){
     $token = $_SESSION['token'];
-    $id_user = $this->userModel->verificarToken($token);
+    $id_user = $this->userModel->verificarTokenUser($token);
     if (!$id_user) {
         header("Location: /Blog/");
         exit;
@@ -125,7 +125,7 @@ if(isset($_POST['apagarComentario'])){
 }
 if(isset($_POST['editarComentario'])){
     $token = $_SESSION['token'];
-    $id_user = $this->userModel->verificarToken($token);
+    $id_user = $this->userModel->verificarTokenUser($token);
     if (!$id_user) {
         header("Location: /Blog/");
         exit;

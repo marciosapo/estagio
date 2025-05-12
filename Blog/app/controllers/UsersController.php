@@ -43,6 +43,7 @@ class UsersController extends Controller {
             }
         }
     }
+
     public function index($username = null){
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             if($username === null){
@@ -69,6 +70,31 @@ class UsersController extends Controller {
                 $this->sendJsonResponse($user);
             } else {
                 $this->sendJsonResponse(['erro' => 'User não encontrado - ' . $user], 404);
+            }
+        }elseif ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
+            if (!isset($input['username'])) {
+                $this->sendJsonResponse(['erro' => 'Falta o username'], 400);
+                return;
+            }
+            if (!isset($input['token'])) {
+                $this->sendJsonResponse(['erro' => 'Falta o token'], 400);
+                return;
+            }
+            $username = $input['username'] ?? '';
+            $token = $input['token'] ?? '';
+            $apagarUser = $this->usersModel->apagarUser($username, $token);
+            if (isset($apagarUser['mensagem'])) {
+                $this->sendJsonResponse(['mensagem' => $apagarUser['mensagem']], 200);
+            } elseif (isset($apagarUser['erro'])) {
+                $this->sendJsonResponse(['erro' => $apagarUser['erro']], 400);
+            } else {
+                $erro = 'Erro desconhecido ao apagar registo.';
             }
         }elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             $raw = file_get_contents('php://input');

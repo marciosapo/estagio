@@ -8,6 +8,9 @@ class Post {
     public function __construct() {
         $this->db = Database::getInstance();
     }
+    public function verificarTokenUser($token) {
+        return verificarToken($token, $this->db);
+    } 
     public function getAllPosts($de = 'ASC') {
         $ordem = strtoupper($de);
         $query = "
@@ -73,7 +76,7 @@ class Post {
                     $post['comentarios'][] = &$comentario;
                 }
             }
-            unset($post['comentarios_map']); // remove o mapa após organizar
+            unset($post['comentarios_map']);
         }
         foreach ($posts as &$post) {
             unset($post['comentarios_map']);
@@ -105,7 +108,6 @@ class Post {
         $stmt = $this->db->prepare($query);
         $stmt->execute([$id]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
         if (empty($rows)) {
             return null;
         }
@@ -170,11 +172,9 @@ class Post {
             WHERE posts.title like ?
             ORDER BY posts.id, comentarios.id
         ";
-    
         $stmt = $this->db->prepare($query);
         $stmt->execute([$pesquisa]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
         if (empty($rows)) {
             return null;
         }
@@ -248,11 +248,9 @@ class Post {
             ORDER BY posts.post_data DESC
             LIMIT 1
         ";
-    
         $stmt = $this->db->prepare($query);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
         if (empty($rows)) {
             return null;
         }
@@ -308,9 +306,9 @@ class Post {
 
 
     public function criarPost($title, $post, $token) {
-        $id_user = $this->verificarToken($token, $db);
+        $id_user = $this->verificarTokenUser($token);
         if (!$id_user) {
-            $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+            return ['erro' => 'Token inválido ou expirado'];
         }
         $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
         $checkStmt = $this->db->prepare($checkQuery);
@@ -327,7 +325,7 @@ class Post {
     }
 
     public function editarPost($id_post, $title, $post_content, $token) {
-        $id_user = $this->verificarToken($token, $db);
+        $id_user = $this->verificarTokenUser($token);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
         }
@@ -349,20 +347,20 @@ class Post {
     }
 
     public function apagarPost($id_post, $token) {
-        $id_user = $this->verificarToken($token, $db);
+        $id_user = $this->verificarTokenUser($token);
         if (!$id_user) {
-            $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+            return ['erro' => 'Token inválido ou expirado'];
         }
         $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
         $checkStmt = $this->db->prepare($checkQuery);
-        $checkStmt->bindParam(':id_user', $id_user);
+        $checkStmt->bindValue(':id_user', $id_user, PDO::PARAM_INT);
         $checkStmt->execute();
         $nivel = $checkStmt->fetchColumn();
         if ($nivel !== 'Owner') {
             return ['erro' => 'Apenas utilizadores com nível Owner podem realizar esta operação.'];
         }
         $verifica = $this->db->prepare("SELECT id, id_user FROM posts WHERE id = :id_post");
-        $verifica->bindParam(':id_post', $id_post, PDO::PARAM_INT);
+        $verifica->bindValue(':id_post', $id_post, PDO::PARAM_INT);
         $verifica->execute();
         if ($verifica->rowCount() == 0) {
             return ['erro' => 'Post não encontrado'];
@@ -372,40 +370,39 @@ class Post {
         $apagarComentarios->bindParam(':id_post', $id_post, PDO::PARAM_INT);
         $apagarComentarios->execute();
         $apagarPost = $this->db->prepare("DELETE FROM posts WHERE id = :id_post");
-        $apagarPost->bindParam(':id_post', $id_post, PDO::PARAM_INT);
+        $apagarPost->bindValue(':id_post', $id_post, PDO::PARAM_INT);
         $apagarPost->execute();
         return ['sucesso' => 'Post e comentários apagados com sucesso'];
     }
 
     public function criarComentario($comentario, $id_post, $token, $id_parent = null) {
-        $id_user = $this->verificarToken($token, $db);
+        $id_user = $this->verificarTokenUser($token);
         if (!$id_user) {
-            $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+            return ['erro' => 'Token inválido ou expirado'];
         }
         $verifica = $this->db->prepare("SELECT id FROM posts WHERE id = :id_post");
-        $verifica->bindParam(':id_post', $id_post, PDO::PARAM_INT);
+        $verifica->bindValue(':id_post', $id_post, PDO::PARAM_INT);
         $verifica->execute();
-
         if ($verifica->rowCount() == 0) {
             return 'POST_NOT_FOUND';
         }
         $query = "INSERT INTO comentarios (comentario, id_user, id_post, id_parent, post_data)
                  VALUES(:comentario, :id_user, :id_post, :id_parent, NOW())";
         $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':comentario', $comentario);
-        $stmt->bindParam(':id_user', $id_user);
-        $stmt->bindParam(':id_post', $id_post);
+        $stmt->bindValue(':comentario', trim($comentario), PDO::PARAM_STR);
+        $stmt->bindValue(':id_user', $id_user, PDO::PARAM_INT);
+        $stmt->bindValue(':id_post', $id_post, PDO::PARAM_INT);
         if($id_parent !== null){
-            $stmt->bindParam(':id_parent', $id_parent, PDO::PARAM_INT);
+            $stmt->bindValue(':id_parent', $id_parent, PDO::PARAM_INT);
         } else{
             $null = null;
-            $stmt->bindParam(':id_parent', $null, PDO::PARAM_NULL);
+            $stmt->bindValue(':id_parent', $null, PDO::PARAM_NULL);
         } 
         return $stmt->execute() ? $this->db->lastInsertId() : false;
     }
 
     public function apagarComentario($id_comentario, $token) {
-        $id_user = $this->verificarToken($token, $db);
+        $id_user = $this->verificarTokenUser($token);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
         }
@@ -446,7 +443,7 @@ class Post {
     }
 
     public function atualizarComentario($id_comentario, $comentario, $token) {
-        $id_user = $this->verificarToken($token, $db);
+        $id_user = $this->verificarTokenUser($token);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
         }
@@ -486,13 +483,6 @@ class Post {
         }
         return false;
     } 
-    
-    private function sendJsonResponse($data, $status = 200) {
-        header('Content-Type: application/json; charset=UTF-8');
-        http_response_code($status);
-        echo json_encode($data, JSON_UNESCAPED_UNICODE);
-        exit();
-    }
 }
 
 ?>

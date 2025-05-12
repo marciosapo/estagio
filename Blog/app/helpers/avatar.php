@@ -1,17 +1,17 @@
 <?php
 
 function avatar() {
-    $pdo = Database::getInstance(); 
+    $db = Database::getInstance(); 
     $user = $_SESSION['user'];
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE username = :user");
-    $stmt->bindParam(':user', $user);
+    $stmt = $db->prepare("SELECT id FROM users WHERE username = :user");
+    $stmt->bindValue(':user', $user, PDO::PARAM_STR);
     $stmt->execute();
     $id_user = $stmt->fetchColumn();
     if (!$id_user) {
         return null;
     }
-    $stmt = $pdo->prepare("SELECT imagem FROM users WHERE id = :id");
-    $stmt->bindParam(':id', $id_user);
+    $stmt = $db->prepare("SELECT imagem FROM users WHERE id = :id");
+    $stmt->bindValue(':id', $id_user, PDO::PARAM_INT);
     $stmt->execute();
     $imagem_binaria = $stmt->fetchColumn();
     if ($imagem_binaria) {

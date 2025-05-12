@@ -4,6 +4,19 @@ class Router {
 
     public function route() {
         $url = isset($_GET['url']) ? rtrim($_GET['url'], '/') : '';
+        if ($url === 'api.html') {
+            $file_path = realpath($_SERVER['DOCUMENT_ROOT'] . '/Blog/public/api.html');
+            if ($file_path && file_exists($file_path)) {
+                header('Content-Type: text/html');
+                readfile($file_path);
+                exit();
+            } else {
+                header('HTTP/1.1 404 Not Found');
+                echo "Ficheiro api.html não encontrado.";
+                exit();
+            }
+            return;
+        }
         $url_parts = explode('/', $url);
         $first_segment = array_shift($url_parts);
         if ($first_segment != 'api' && $first_segment != 'Blog') {

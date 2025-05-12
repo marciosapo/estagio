@@ -15,7 +15,6 @@ class PostsController extends Controller {
     }
     public function index($id = null) {
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-            
             if($id === null){ 
                 $posts = $this->postModel->getAllPosts();
                 $this->sendJsonResponse($posts);
@@ -29,7 +28,12 @@ class PostsController extends Controller {
             } 
         }  
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) { 
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             if(!isset($input['token'])){
                 $this->sendJsonResponse(['erro' => 'Falta o Token'], 400);
             } 
@@ -44,7 +48,12 @@ class PostsController extends Controller {
             }
         }
         if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             if(!isset($input['token'])){
                 $this->sendJsonResponse(['erro' => 'Falta o Token'], 400);
             } 
@@ -62,7 +71,12 @@ class PostsController extends Controller {
             }
         }
         if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             if (!isset($input['token'])) {
                 $this->sendJsonResponse(['erro' => 'Falta o token'], 400);
             } 
@@ -76,15 +90,18 @@ class PostsController extends Controller {
     }
     public function comentario() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
-            
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             if (!isset($input['title'], $input['post'], $input['id_post'], $input['token'])) {
                 $this->sendJsonResponse(['erro' => 'Falta campos obrigatórios'], 400);
                 return;
             }
             $id_parent = isset($input['id_parent']) ? $input['id_parent'] : NULL; 
             $result = $this->postModel->criarComentario($input['title'], $input['post'], $input['id_post'], $input['token'], $id_parent);
-
             if ($result === 'POST_NOT_FOUND') {
                 $this->sendJsonResponse(['erro' => 'O post com o id ' . $input['id_post'] . ' não existe.'], 404);
             } elseif (isset($result['erro'])) {
@@ -94,7 +111,12 @@ class PostsController extends Controller {
             }
         }
         if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             if (!isset($input['token'])) {
                 $this->sendJsonResponse(['erro' => 'Falta o token'], 400);
             }
@@ -110,6 +132,32 @@ class PostsController extends Controller {
                 $this->sendJsonResponse(['erro' => $result['erro']], 400);
             } else {
                 $this->sendJsonResponse(['mensagem' => 'Comentário/Resposta apagado/a com sucesso', 'id' => $result], 201);
+            }
+        }
+        if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
+            if (!isset($input['token'])) {
+                $this->sendJsonResponse(['erro' => 'Falta o token'], 400);
+            }
+            if (!isset($input['idcomentario'])) {
+                $this->sendJsonResponse(['erro' => 'Falta o id do comentário'], 400);
+            }
+            if (!isset($input['comentario'])) {
+                $this->sendJsonResponse(['erro' => 'Falta o conteudo do comentário'], 400);
+            } 
+            $result = $this->postModel->atualizarComentario($input['idcomentario'], $input['comentario'], $input['token']);
+
+            if ($result === 'POST_NOT_FOUND') {
+                $this->sendJsonResponse(['erro' => 'O comentário com o id ' . $input['idcomentario'] . ' não existe.'], 404);
+            } elseif (isset($result['erro'])) {
+                $this->sendJsonResponse(['erro' => $result['erro']], 400);
+            } else {
+                $this->sendJsonResponse(['mensagem' => 'Comentário/Resposta atualizado/a com sucesso', 'id' => $result], 201);
             }
         }
     }
