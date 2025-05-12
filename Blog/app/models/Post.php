@@ -1,6 +1,7 @@
 <?php
 
 require_once '../app/core/Database.php';
+require_once '../app/helpers/tokens.php';
 
 class Post {
     private $db;
@@ -307,7 +308,7 @@ class Post {
 
 
     public function criarPost($title, $post, $token) {
-        $id_user = $this->verificarToken($token);
+        $id_user = $this->verificarToken($token, $db);
         if (!$id_user) {
             $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
         }
@@ -326,7 +327,7 @@ class Post {
     }
 
     public function editarPost($id_post, $title, $post_content, $token) {
-        $id_user = $this->verificarToken($token);
+        $id_user = $this->verificarToken($token, $db);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
         }
@@ -348,7 +349,7 @@ class Post {
     }
 
     public function apagarPost($id_post, $token) {
-        $id_user = $this->verificarToken($token);
+        $id_user = $this->verificarToken($token, $db);
         if (!$id_user) {
             $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
         }
@@ -377,7 +378,7 @@ class Post {
     }
 
     public function criarComentario($comentario, $id_post, $token, $id_parent = null) {
-        $id_user = $this->verificarToken($token);
+        $id_user = $this->verificarToken($token, $db);
         if (!$id_user) {
             $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
         }
@@ -404,22 +405,22 @@ class Post {
     }
 
     public function apagarComentario($id_comentario, $token) {
-        $id_user = $this->verificarToken($token);
+        $id_user = $this->verificarToken($token, $db);
         if (!$id_user) {
-            $this->sendJsonResponse(['erro' => 'Token inválido ou expirado'], 400);
+            return ['erro' => 'Token inválido ou expirado'];
         }
         $verifica = $this->db->prepare("SELECT id, id_user, id_parent FROM comentarios WHERE id = :id");
-        $verifica->bindParam(':id', $id_comentario, PDO::PARAM_INT);
+        $verifica->bindValue(':id', $id_comentario, PDO::PARAM_INT);
         $verifica->execute();
         if ($verifica->rowCount() == 0) {
-            $this->sendJsonResponse(['erro' => 'Comentário não encontrado ' . $id_comentario], 404);
+            return ['erro' => 'Comentário não encontrado ' . $id_comentario];
         }
         $comentario = $verifica->fetch(PDO::FETCH_ASSOC);
         if (!empty($comentario['id_parent'])) {
             $id_parent = $comentario['id_parent'];
             if ($id_parent) {
                 $verificaPai = $this->db->prepare("SELECT id_user FROM comentarios WHERE id = :id_parent");
-                $verificaPai->bindParam(':id_parent', $id_parent, PDO::PARAM_INT);
+                $verificaPai->bindValue(':id_parent', $id_parent, PDO::PARAM_INT);
                 $verificaPai->execute();
                 if ($verificaPai->rowCount() == 0) {
                     return ['erro' => 'Comentário pai não encontrado'];
@@ -434,23 +435,23 @@ class Post {
         }
         if (empty($comentario['id_parent'])) {
             $apagarFilhos = $this->db->prepare("DELETE FROM comentarios WHERE id_parent = :id_comentario");
-            $apagarFilhos->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
+            $apagarFilhos->bindValue(':id_comentario', $id_comentario, PDO::PARAM_INT);
             $apagarFilhos->execute();
         }
         $apagarComentario = $this->db->prepare("DELETE FROM comentarios WHERE id = :id_comentario");
-        $apagarComentario->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
+        $apagarComentario->bindValue(':id_comentario', $id_comentario, PDO::PARAM_INT);
         $apagarComentario->execute();
         $mensagem = empty($comentario['id_parent']) ? 'Comentário e respostas apagados com sucesso' : 'Resposta apagada com sucesso';
         return ['sucesso' => $mensagem];
     }
 
     public function atualizarComentario($id_comentario, $comentario, $token) {
-        $id_user = $this->verificarToken($token);
+        $id_user = $this->verificarToken($token, $db);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
         }
         $verifica = $this->db->prepare("SELECT id_user FROM comentarios WHERE id = :id_comentario");
-        $verifica->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
+        $verifica->bindValue(':id_comentario', $id_comentario, PDO::PARAM_INT);
         $verifica->execute();
         if ($verifica->rowCount() == 0) {
             return ['erro' => 'Comentário não encontrado'];
@@ -461,8 +462,8 @@ class Post {
         }
         $query = "UPDATE comentarios SET comentario = :comentario, post_data = NOW() WHERE id = :id_comentario";
         $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':comentario', $comentario);
-        $stmt->bindParam(':id_comentario', $id_comentario, PDO::PARAM_INT);
+        $stmt->bindValue(':comentario', trim($comentario), PDO::PARAM_STR);
+        $stmt->bindValue(':id_comentario', $id_comentario, PDO::PARAM_INT);
         if($stmt->execute()){
             return ['sucesso' => 'Comentário atualizado com sucesso'];
         }else{
@@ -477,7 +478,7 @@ class Post {
             WHERE username = :username
         ";
         $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':username', $user);
+        $stmt->bindValue(':username', trim($user), PDO::PARAM_STR);
         $stmt->execute();
         if ($stmt->rowCount() > 0) {
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -485,24 +486,7 @@ class Post {
         }
         return false;
     } 
-    public function verificarToken($token) {
-        $query = "
-            SELECT users.id AS id_user
-            FROM tokens
-            JOIN users ON tokens.username = users.username
-            WHERE tokens.token = :token AND tokens.expira > NOW()
-            LIMIT 1
-        ";
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(':token', $token);
-        $stmt->execute();
-        
-        if ($stmt->rowCount() > 0) {
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $result['id_user'];
-        }
-        return false;
-    }
+    
     private function sendJsonResponse($data, $status = 200) {
         header('Content-Type: application/json; charset=UTF-8');
         http_response_code($status);

@@ -28,3 +28,9 @@ resize: none;
 #dropdownMenuButton::before {
     display: none;
 }
+
+.popup{
+    position: absolute !important;
+    top: 350px !important;
+    right: 10px !important;
+} 

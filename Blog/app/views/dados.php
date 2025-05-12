@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/blocks/flash.php'; ?>
 <div class="container-fluid">
 <div class="row">
     <div class="col-md-6 d-none d-md-block image-side"><img src="https://www.itinsight.pt/img/uploads/750x421_abbe7a45b9bf7edce6472496ff1614f5.jpg" width="100%" height="100%"></div>
@@ -41,15 +42,6 @@
             <label for="token" class="form-label">Token Ativo</label>
             <input type="text" value="<?php echo htmlspecialchars($result['token']); ?>" name="token" class="form-control" id="token" required maxlength="255" readonly>
           </div>
-          <?php if(isset($erro) && $erro): ?>
-          <div class="ms-auto">
-          <p class="text-center text-danger"><?php echo 'ERRO: ' . $erro ?></p>
-          </div> 
-<?php elseif(isset($sucesso) && $sucesso): ?>
-          <div class="ms-auto">
-          <p class="text-center text-success">Dados atualizados com sucesso...</p>
-          </div> 
-          <?php endif; ?>
           <input type="submit" class="btn btn-primary w-100" name="atualizarDados" value="Atualizar">
         </form>
       </div>

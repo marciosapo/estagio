@@ -15,7 +15,12 @@ class UsersController extends Controller {
     }
     public function registo(){
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             if (!isset($input['username']) || !isset($input['nome']) || !isset($input['email']) || !isset($input['pass'])) {
                 $this->sendJsonResponse(['erro' => 'Dados incompletos'], 400);
                 return;
@@ -49,7 +54,12 @@ class UsersController extends Controller {
                 }
             }
         }elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             $username = $input['username'] ?? '';
             if (empty($username)) {
                 return $this->sendJsonResponse(['erro' => 'Usuário ausentes.'], 400);
@@ -61,7 +71,12 @@ class UsersController extends Controller {
                 $this->sendJsonResponse(['erro' => 'User não encontrado - ' . $user], 404);
             }
         }elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             if (!isset($input['username']) || !isset($input['nome']) || !isset($input['email']) || !isset($input['token'])) {
                 $this->sendJsonResponse(['erro' => 'Dados incompletos'], 400);
                 return;
@@ -81,12 +96,35 @@ class UsersController extends Controller {
             }
         } else {
             $this->sendJsonResponse(['erro' => 'Método não permitido'], 405);
-        } 
+        }
     }
 
+    public function addAdmin(){
+        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
+            if (!isset($input['username']) || !isset($input['token'])) {
+                $this->sendJsonResponse(['erro' => 'Falta o user ou token.'], 400);
+                return;
+            }
+            $user = $input['username'];
+            $token = $input['token'];
+            $result = $this->usersModel->addAdmin($user, $token);
+            $this->sendJsonResponse($result);
+        } 
+    } 
     public function login() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             $user = $input['user'] ?? '';
             $pass = $input['pass'] ?? '';
     
@@ -104,13 +142,16 @@ class UsersController extends Controller {
     }
     public function logout() {
         if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $raw = file_get_contents('php://input');
+            $input = json_decode($raw, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
+                return;
+            }
             $user = $input['user'] ?? '';
-    
             if (empty($user)) {
                 return $this->sendJsonResponse(['erro' => 'Usuário ausente.'], 400);
             }
-    
             $users = $this->usersModel->deleteToken($user);
             if ($users) {
                 $this->sendJsonResponse($users);

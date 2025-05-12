@@ -8,11 +8,18 @@ $formatter = new IntlDateFormatter(
     IntlDateFormatter::GREGORIAN
 );
 
+include 'blocks/editForm.php';
+include 'blocks/editarComentario.php';
+include 'blocks/responderForm.php';
+include 'blocks/novoComentario.php';
+include 'blocks/editarPost.php';
+
 if(isset($_POST['cancelar'])){
     unset($_POST['responder']);
     unset($_POST['editar']);
     unset($_POST['responderid']);
     unset($_POST['respondeid']);
+    unset($_POST['editarid']);
 } 
 if(isset($_POST['apagarPost'])){
     if($_SESSION['nivel'] != "Owner" && $_SESSION['nivel'] != "Admin"){
@@ -146,47 +153,20 @@ function verRespostas($respostas, $post, $nivel = 1) {
             <small class="text-muted"> • <?php echo tempoDecorrido($resposta['post_data']); ?></small>
             <p class="text-break mt-2 mb-2"><?php echo nl2br(htmlspecialchars($resposta['comentario'])); ?></p>
             <?php if ($_SESSION['user'] == $resposta['autor']): ?>
-                <form action="/Blog/verPost" method="POST" class="mt-3 mb-3 w-100">
-                <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
-                <input type="hidden" name="editarid" value="<?php echo $resposta['id']; ?>">
-                <div class="d-flex gap-2">
-                    <input type="submit" name="editar" value="Editar" class="btn btn-sm btn-outline-secondary">
-                    <input type="submit" onclick="return confirm('Tem certeza que deseja apagar este comentário?');" name="apagarComentario" value="Apagar" class="btn btn-sm btn-outline-secondary">
-                </div>
-            </form>
+                <?php editForm($post['id'], $resposta['id']); ?>
             <?php endif; ?>
             <div class="d-flex gap-2">
                 <?php if ($_SESSION['user'] != $resposta['autor'] && !isset($_POST['responderid']) && !isset($_POST['respondeid'])): ?>
-                    <form method="POST" action="/Blog/verPost"  class="mt-3 mb-3 w-100 h-auto">
-                        <input type="hidden" name="id" value="<?= $post['id'] ?>">
-                        <input type="hidden" name="respondeid" value="<?= $resposta['id'] ?>">
-                        <button type="submit" name="responder" class="btn btn-sm btn-outline-secondary">Responder</button>
-                    </form>
+                    <?php responderForm($post['id'], $resposta['id']); ?>
                 <?php endif; ?>
             </div>
         
             <?php if (isset($_POST['respondeid']) && $_POST['respondeid'] == $resposta['id']): ?>
-                <form method="POST" action="/Blog/verPost" class="mt-3 mb-3 w-100">
-                    <input type="hidden" name="id" value="<?= $post['id'] ?>">
-                    <input type="hidden" name="id_parent" value="<?= $resposta['id'] ?>">
-                    <textarea name="comment" class="form-control mb-2 w-100" placeholder="Escreva sua resposta..."></textarea>
-                    <div class="d-flex gap-2">
-                        <button type="submit" name="cancelar" class="btn btn-outline-secondary btn-sm">Cancelar</button>
-                        <button type="submit" name="novoComentario" class="btn btn-outline-secondary btn-sm">Enviar</button>
-                    </div>
-                </form>
+                <?php novoComentarioForm($post['id'], $resposta['id']); ?>
             <?php endif; ?>
 
             <?php if (isset($_POST['editarid']) && $_POST['editarid'] == $resposta['id']): ?>
-                <form method="POST" action="/Blog/verPost" class="mt-3 mb-3 w-100">
-                    <input type="hidden" name="id" value="<?= $post['id'] ?>">
-                    <input type="hidden" name="id_parent" value="<?= $resposta['id'] ?>">
-                    <textarea name="comment" class="form-control mb-2 w-100" placeholder="Escreva sua resposta..."></textarea>
-                    <div class="d-flex gap-2">
-                        <button type="submit" name="cancelar" class="btn btn-outline-secondary btn-sm">Cancelar</button>
-                        <button type="submit" name="novoComentario" class="btn btn-outline-secondary btn-sm">Gravar</button>
-                    </div>
-                </form>
+                <?php editarComentarioForm($post['id'], $resposta['id'], $resposta['comentario']); ?>
             <?php endif; ?>
 
             <?php if (!empty($resposta['respostas'])) {
@@ -203,24 +183,7 @@ function verRespostas($respostas, $post, $nivel = 1) {
     <?php if (isset($post) && !empty($post)): ?>
         <div class="row justify-content-center">
             <div class="col-12 col-lg-10">
-            <?php if (isset($_SESSION['flash_sucesso'])): ?>
-                    <div class="alert alert-success mb-3" id="flash-sucesso">
-                        <?= $_SESSION['flash_sucesso']; unset($_SESSION['flash_sucesso']); ?>
-                    </div>
-                <?php 
-                    unset($_SESSION['flash_sucesso']);
-                    unset($_SESSION['flash_erro']);
-                    endif; 
-                ?>
-                <?php if (isset($_SESSION['flash_erro'])): ?>
-                    <div class="alert alert-danger mb-3" id="flash-erro">
-                        <?= $_SESSION['flash_erro']; unset($_SESSION['flash_erro']); ?>
-                    </div>
-                    <?php 
-                    unset($_SESSION['flash_sucesso']);
-                    unset($_SESSION['flash_erro']);
-                    endif; 
-                ?>
+                <?php require_once __DIR__ . '/blocks/flash.php'; ?>
                 <div class="card shadow-sm border-0">
                 <div class="card-body d-flex gap-3 align-items-stretch">
                 <div class="w-25">
@@ -234,90 +197,12 @@ function verRespostas($respostas, $post, $nivel = 1) {
                         <time datetime="<?php echo $post['post_data']; ?>"><?php echo $formatter->format(new DateTime($post['post_data'])); ?></time>
                     </p>
                         <?php if (isset($_SESSION['user']) && $_SESSION['user'] == $post['postado'] && isset($_POST['editarPost'])): ?>
-                            <form method="POST" action="/Blog/verPost" class="mb-4">
-                                <input type="hidden" name="id" value="<?= $post['id']; ?>">
-                                <div class="mb-3">
-                                    <label for="tituloEditado" class="form-label">Editar Título</label>
-                                    <input type="text" class="form-control" id="tituloEditado" name="tituloEditado" value="<?= htmlspecialchars($post['title']); ?>" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="conteudoEditado" class="form-label">Editar Conteúdo</label>
-                                    <textarea class="form-control" id="conteudoEditado" name="conteudoEditado" rows="6" required><?= htmlspecialchars($post['post']); ?></textarea>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <button type="submit" name="salvarEdicao" class="btn btn-sm btn-outline-success">Salvar</button>
-                                    <button type="submit" name="apagarEdicao" class="btn btn-sm btn-outline-secondary">Cancelar</button>
-                                </div>
-                            </form>
+                            <?php editarPostForm($post['id'], $post['title'], $post['post']) ?>
                         <?php endif; ?>
-                        <?php if (!empty($post['comentarios'])): ?>
-                            <hr>
-                            <h5 class="mb-4">Comentários</h5>
-                            
-                                <?php foreach ($post['comentarios'] as $comentario): ?>
-                                    <div class="bg-light rounded p-3 mb-3 shadow-sm">
-                                        <strong class="text-primary"><?php echo htmlspecialchars($comentario['autor']); ?></strong>
-                                        <small class="text-muted"> • <?php echo tempoDecorrido($comentario['post_data']); ?></small>
-                                        <p class="mt-2 text-break"><?php echo nl2br(htmlspecialchars($comentario['comentario'])); ?></p>
-
-                                        <?php if (isset($_SESSION['user'])): ?>
-                                            <?php if ($_SESSION['user'] == $comentario['autor'] && !isset($_POST['editar'])): ?>
-                                                <form action="/Blog/verPost" method="POST" class="mt-3 mb-3 w-100">
-                                                    <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
-                                                    <input type="hidden" name="editarid" value="<?php echo $comentario['id']; ?>">
-                                                    <input type="hidden" name="titulo" value="<?php echo $post['title']; ?>">
-                                                    <div class="d-flex gap-2">
-                                                        <input type="submit" name="editar" value="Editar" class="btn btn-sm btn-outline-secondary">
-                                                        <input type="submit" onclick="return confirm('Tem certeza que deseja apagar este comentário?');" name="apagarComentario" value="Apagar" class="btn btn-sm btn-outline-secondary">
-                                                    </div>
-                                                </form>
-                                            <?php endif; ?>
-                                            <?php if ($_SESSION['user'] == $comentario['autor'] && isset($_POST['editarid']) && $_POST['editarid'] == $comentario['id'] && !isset($_POST['apagarComentario'])): ?>
-                                                <form action="/Blog/verPost" method="POST" class="mt-3 mb-3 w-100">
-                                                    <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
-                                                    <input type="hidden" name="editarid" value="<?php echo $comentario['id']; ?>">
-                                                    <textarea name="comment" class="form-control mb-2 w-100"><?php echo htmlspecialchars($comentario['comentario']); ?></textarea>
-                                                    <div class="d-flex gap-2">
-                                                        <input type="submit" name="cancelar" value="Cancelar" class="btn btn-sm btn-outline-secondary">
-                                                        <input type="submit" name="editarComentario" value="Gravar" class="btn btn-sm btn-outline-secondary">
-                                                    </div>
-                                                </form>
-                                            <?php endif; ?>
-                                            <?php if (isset($_POST['responder']) && $_POST['respondeid'] == $comentario['id']): ?>
-                                                <form action="/Blog/verPost" method="POST" class="mt-3 mb-3 w-100">
-                                                    <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
-                                                    <input type="hidden" name="id_parent" value="<?php echo $comentario['id']; ?>">
-                                                    <input type="hidden" name="respondeid" value="<?php echo $comentario['id']; ?>">
-                                                    <textarea name="comment" class="form-control mb-2 w-100" placeholder="Escreva a sua resposta aqui..."></textarea>
-                                                    <div class="d-flex gap-2">
-                                                        <input type="submit" name="cancelar" value="Cancelar" class="btn btn-sm btn-outline-secondary">
-                                                        <input type="submit" name="novoComentario" value="Enviar Resposta" class="btn btn-sm btn-outline-secondary">
-                                                    </div>
-                                                </form>
-                                            <?php endif; ?>
-                                            <?php if ($_SESSION['user'] != $comentario['autor'] && !isset($_POST['respondeid']) && !isset($_POST['responderid'])): ?>
-                                                <form action="/Blog/verPost" method="POST" class="m-0 p-0 d-inline-block align-self-start h-auto">
-                                                    <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
-                                                    <input type="hidden" name="respondeid" value="<?php echo $comentario['id']; ?>">
-                                                    <input type="submit" name="responder" value="Responder" class="btn btn-sm btn-outline-secondary">
-                                                </form>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
-                                        <?php verRespostas($comentario['respostas'], $post); ?>
-
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
+                        <?php include 'comentarios/lista.php'; ?>
                         <?php if (isset($_SESSION['user']) && $_SESSION['user'] != $post['postado'] && !isset($_POST['respondeid'])): ?>
                             <hr>
-                            <form action="/Blog/verPost" method="POST" class="mb-3 me-3 w-100">
-                                <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
-                                <label for="comment" class="form-label">Adicionar um comentário</label>
-                                <textarea id="comment" name="comment" class="form-control mb-2 w-100" placeholder="Escreva seu comentário aqui..."></textarea>
-                                <div class="d-flex gap-2">
-                                    <input type="submit" class="btn btn-sm btn-outline-secondary" name="novoComentario" value="Enviar Comentário">
-                                </div>
-                            </form>
+                            <?php novoComentarioBaseForm($post['id']) ?>
                         <?php endif; ?>
                     </div>
                 </div>

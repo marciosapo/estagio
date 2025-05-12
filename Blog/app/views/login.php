@@ -20,9 +20,6 @@
             <input type="password" id="form3Example4" name="pass" class="form-control form-control-lg"
                 placeholder="palavra-passe" />
           </div>
-          <div class="d-flex justify-content-between align-items-center">
-            <a href="#!" class="text-body">Esqueceu-se da palavra-passe?</a>
-          </div>
           <?php if (isset($error)): ?>
           <div class="d-flex align-items-end mt-4">
             <label class="text-danger"><?php echo $error; ?></label>

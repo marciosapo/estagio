@@ -9,7 +9,7 @@ if (isset($_SESSION['user']) && isset($_SESSION['token'])) {
     require_once '../app/models/User.php';
 
     $userModel = new User();
-    $id_user = $userModel->verificarToken($_SESSION['token']);
+    $id_user = verificarToken($_SESSION['token'], $userModel->db);
 
     if (!$id_user) {
         session_unset();

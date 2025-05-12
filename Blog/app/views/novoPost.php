@@ -1,9 +1,4 @@
-<?php 
-  $mensagem = null;
-  if(!isset($erro)){ $erro = null; }
-  if(!isset($sucesso)){ $sucesso = null; }  
-  $mensagem = $sucesso !== null ? $sucesso : ($erro !== null ? $erro : null); 
-?>
+<?php require_once __DIR__ . '/blocks/flash.php'; ?>
 <form action="/Blog/novoPost" method="POST" class="p-4 rounded bg-light shadow-sm">
   <h3 class="mb-4 text-primary">Criar Novo Post</h3>
 
@@ -19,6 +14,5 @@
 
   <div class="d-flex align-items-center gap-2 mt-3">
     <button type="submit" class="btn btn-primary">Publicar</button>
-    <?= $mensagem !== null ? "<p class='mb-0 ml-4 text-success'>$mensagem</p>" : "" ?>
 </div>
 </form>
