@@ -32,7 +32,7 @@ class BlogController extends Controller {
         } else if (isset($_POST['doAntigo'])) {
             $resultado = $this->postModel->getAllPosts("ASC", $pagina, $porPagina);
         } else {
-            $resultado = $this->postModel->getPost($_POST['pesquisa']);
+            $resultado = $this->postModel->getPost($_POST['pesquisa'], $pagina, $porPagina);
         }
 
         if (!isset($resultado['posts'])) {

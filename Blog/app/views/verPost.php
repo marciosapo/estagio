@@ -1,5 +1,9 @@
 <?php
 
+if(!isset($_POST['id'])){
+    header("Location: /Blog/");
+    exit;
+}
 $formatter = new IntlDateFormatter(
     'pt_PT',
     IntlDateFormatter::LONG,
@@ -152,21 +156,23 @@ function verRespostas($respostas, $post, $nivel = 1) {
             <strong class="text-primary"><?php echo htmlspecialchars($resposta['autor']); ?></strong>
             <small class="text-muted"> • <?php echo tempoDecorrido($resposta['post_data']); ?></small>
             <p class="text-break mt-2 mb-2"><?php echo nl2br(htmlspecialchars($resposta['comentario'])); ?></p>
-            <?php if ($_SESSION['user'] == $resposta['autor']): ?>
-                <?php editForm($post['id'], $resposta['id']); ?>
-            <?php endif; ?>
-            <div class="d-flex gap-2">
-                <?php if ($_SESSION['user'] != $resposta['autor'] && !isset($_POST['responderid']) && !isset($_POST['respondeid'])): ?>
-                    <?php responderForm($post['id'], $resposta['id']); ?>
+            <?php if(isset($_SESSION['user'])): ?>
+                <?php if ($_SESSION['user'] == $resposta['autor']): ?>
+                    <?php editForm($post['id'], $resposta['id']); ?>
                 <?php endif; ?>
-            </div>
-        
-            <?php if (isset($_POST['respondeid']) && $_POST['respondeid'] == $resposta['id']): ?>
-                <?php novoComentarioForm($post['id'], $resposta['id']); ?>
-            <?php endif; ?>
+                <div class="d-flex gap-2">
+                    <?php if ($_SESSION['user'] != $resposta['autor'] && !isset($_POST['responderid']) && !isset($_POST['respondeid'])): ?>
+                        <?php responderForm($post['id'], $resposta['id']); ?>
+                    <?php endif; ?>
+                </div>
+            
+                <?php if (isset($_POST['respondeid']) && $_POST['respondeid'] == $resposta['id']): ?>
+                    <?php novoComentarioForm($post['id'], $resposta['id']); ?>
+                <?php endif; ?>
 
-            <?php if (isset($_POST['editarid']) && $_POST['editarid'] == $resposta['id']): ?>
-                <?php editarComentarioForm($post['id'], $resposta['id'], $resposta['comentario']); ?>
+                <?php if (isset($_POST['editarid']) && $_POST['editarid'] == $resposta['id']): ?>
+                    <?php editarComentarioForm($post['id'], $resposta['id'], $resposta['comentario']); ?>
+                <?php endif; ?>
             <?php endif; ?>
 
             <?php if (!empty($resposta['respostas'])) {
@@ -184,28 +190,37 @@ function verRespostas($respostas, $post, $nivel = 1) {
         <div class="row justify-content-center">
             <div class="col-12 col-lg-10">
                 <?php require_once __DIR__ . '/blocks/flash.php'; ?>
-                <div class="card shadow-sm border-0">
-                <div class="card-body d-flex gap-3 align-items-stretch">
-                <div class="w-25">
-                    <img src="https://www.blogtyrant.com/wp-content/uploads/2020/02/how-long-should-a-blog-post-be.png" class="img-fluid object-fit-cover rounded" style="height: 250px;" alt="Imagem do post">
-                </div>
-                <div class="flex-grow-1 d-flex flex-column justify-content-between">
-                    <h3 class="text-primary fw-semibold"><?php echo htmlspecialchars($post['title']); ?></h3>
-                    <p class="mt-4 mb-4 text-break"><?php echo nl2br(htmlspecialchars($post['post'])); ?></p>
-                    <p class="text-muted text-end">
-                        Postado por <strong><?php echo htmlspecialchars($post['postado']); ?></strong> em 
-                        <time datetime="<?php echo $post['post_data']; ?>"><?php echo $formatter->format(new DateTime($post['post_data'])); ?></time>
-                    </p>
-                        <?php if (isset($_SESSION['user']) && $_SESSION['user'] == $post['postado'] && isset($_POST['editarPost'])): ?>
-                            <?php editarPostForm($post['id'], $post['title'], $post['post']) ?>
-                        <?php endif; ?>
-                        <?php include 'comentarios/lista.php'; ?>
-                        <?php if (isset($_SESSION['user']) && $_SESSION['user'] != $post['postado'] && !isset($_POST['respondeid'])): ?>
-                            <hr>
-                            <?php novoComentarioBaseForm($post['id']) ?>
-                        <?php endif; ?>
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body d-flex gap-3 align-items-stretch">
+                        <div class="w-25">
+                            <img src="https://www.blogtyrant.com/wp-content/uploads/2020/02/how-long-should-a-blog-post-be.png" class="img-fluid object-fit-cover rounded" style="height: 250px;" alt="Imagem do post">
+                        </div>
+                        <div class="flex-grow-1 d-flex flex-column justify-content-between">
+                            <h3 class="text-primary fw-semibold"><?php echo htmlspecialchars($post['title']); ?></h3>
+                            <p class="mt-4 mb-4 text-break"><?php echo nl2br(htmlspecialchars($post['post'])); ?></p>
+                            <p class="text-muted text-end">
+                                Postado por <strong><?php echo htmlspecialchars($post['postado']); ?></strong> em 
+                                <time datetime="<?php echo $post['post_data']; ?>"><?php echo $formatter->format(new DateTime($post['post_data'])); ?></time>
+                            </p>
+
+                            <?php if (isset($_SESSION['user']) && $_SESSION['user'] == $post['postado'] && isset($_POST['editarPost'])): ?>
+                                <?php editarPostForm($post['id'], $post['title'], $post['post']) ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body">
+                        <?php include 'comentarios/lista.php'; ?>
+                    </div>
+                </div>
+                <?php if (isset($_SESSION['user']) && $_SESSION['user'] != $post['postado'] && !isset($_POST['respondeid'])): ?>
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <?php novoComentarioBaseForm($post['id']); ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     <?php else: ?>

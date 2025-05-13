@@ -43,4 +43,20 @@ function generateToken($length = 32, $db = null) {
     return $token;
 }
 
+function getTokenUser($user){
+        $query = "
+            SELECT users.id AS user_id
+            FROM users
+            WHERE username = :username
+        ";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':username', trim($user), PDO::PARAM_STR);
+        $stmt->execute();
+        if ($stmt->rowCount() > 0) {
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result['user_id'];
+        }
+        return false;
+    } 
+
 ?>

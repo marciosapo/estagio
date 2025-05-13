@@ -1,13 +1,10 @@
 <?php if (!empty($post['comentarios'])): ?>
-    <hr>
     <h5 class="mb-4">Comentários</h5>
-    
         <?php foreach ($post['comentarios'] as $comentario): ?>
             <div class="bg-light rounded p-3 mb-3 shadow-sm">
                 <strong class="text-primary"><?php echo htmlspecialchars($comentario['autor']); ?></strong>
                 <small class="text-muted"> • <?php echo tempoDecorrido($comentario['post_data']); ?></small>
                 <p class="mt-2 text-break"><?php echo nl2br(htmlspecialchars($comentario['comentario'])); ?></p>
-
                 <?php if (isset($_SESSION['user'])): ?>
                     <?php if ($_SESSION['user'] == $comentario['autor'] && !isset($_POST['editar'])): ?>
                         <?php editForm($post['id'], $comentario['id'], $comentario['comentario']); ?>
@@ -25,5 +22,5 @@
                 <?php verRespostas($comentario['respostas'], $post); ?>
 
         <?php endforeach; ?>
-    </div>
+                    </div>
 <?php endif; ?>
