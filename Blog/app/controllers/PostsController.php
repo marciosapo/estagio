@@ -16,7 +16,7 @@ class PostsController extends Controller {
     public function index($id = null) {
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             if($id === null){ 
-                $posts = $this->postModel->getAllPosts();
+                $posts = $this->postModel->getAllPosts("ASC", 0, 0);
                 $this->sendJsonResponse($posts);
             }else{
                 $post = $this->postModel->getPostById($id);

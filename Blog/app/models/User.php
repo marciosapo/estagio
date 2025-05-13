@@ -97,20 +97,20 @@ class User {
     public function novoUser($username, $nome, $email, $pass) {
         $checkQuery = "SELECT COUNT(*) FROM users WHERE username = :user OR email = :email";
         $checkStmt = $this->db->prepare($checkQuery);
-        $stmt->bindValue(':user', trim($username), PDO::PARAM_STR);
-        $stmt->bindValue(':email', trim($email), PDO::PARAM_STR);
+        $checkStmt->bindValue(':user', trim($username), PDO::PARAM_STR);
+        $checkStmt->bindValue(':email', trim($email), PDO::PARAM_STR);
         $checkStmt->execute();
         $exists = $checkStmt->fetchColumn();
         if ($exists > 0) {
             return ['erro' => 'Nome de utilizador ou email já existe'];
         }
         $hash_password = password_hash($pass, PASSWORD_DEFAULT);
-        $query = "INSERT INTO users(username, nome, email, pass, nivel) VALUES(:user, :nome, :email, :pass, 'User')";
+        $query = "INSERT INTO users(username, nome, email, pass, nivel) VALUES(:username, :nome, :email, :pass, 'User')";
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':username', trim($username), PDO::PARAM_STR);
         $stmt->bindValue(':nome', trim($nome), PDO::PARAM_STR);
         $stmt->bindValue(':email', trim($email), PDO::PARAM_STR);
-        $stmt->bindValue(':password', $hash_password, PDO::PARAM_STR);
+        $stmt->bindValue(':pass', $hash_password, PDO::PARAM_STR);
         try {
             if ($stmt->execute()) {
                 return ['mensagem' => 'Novo utilizador registado com sucesso'];
@@ -357,9 +357,9 @@ class User {
             $tokenStmt->bindValue(':username', trim($user), PDO::PARAM_STR);
             $tokenStmt->bindParam(':expira', $termina);
             if ($tokenStmt->execute()) {
-                return ['messagem' => 'Token renovado com sucesso', 'token' => $_SESSION['token']];
+                return ['mensagem' => 'Token renovado com sucesso', 'token' => $_SESSION['token']];
             } else {
-                return ['error' => 'Erro ao renovar o token'];
+                return ['erro' => 'Erro ao renovar o token'];
             }
         } 
     }
@@ -371,7 +371,7 @@ class User {
         $stmt->execute();
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$userData || !password_verify($pass, $userData['pass'])) {
-            return ['error' => 'Login incorrecto!'];
+            return ['erro' => 'Login incorrecto!'];
         }
         $checkTokenQuery = "SELECT * FROM tokens WHERE username = :username AND expira > NOW() LIMIT 1";
         $checkTokenStmt = $this->db->prepare($checkTokenQuery);
@@ -379,7 +379,7 @@ class User {
         $checkTokenStmt->execute();
         $existingToken = $checkTokenStmt->fetch(PDO::FETCH_ASSOC);
         if ($existingToken) {
-            return ['error' => 'Já existe um token ativo para este usuário'];
+            return ['erro' => 'Já existe um token ativo para este usuário'];
         }
         $token = generateToken(32);
         $datetime = new DateTime('now', new DateTimeZone('Europe/Lisbon'));
@@ -392,12 +392,12 @@ class User {
         $tokenStmt->bindParam(':expira', $termina);
         if ($tokenStmt->execute()) {
             return [
-                'message' => 'Token gerado com sucesso',
+                'mensagem' => 'Token gerado com sucesso',
                 'token' => $token,
                 'nivel' => $userData['nivel']
             ];
         } else {
-            return ['error' => 'Erro ao gerar o token'];
+            return ['erro' => 'Erro ao gerar o token'];
         }
     }
     public function deleteToken($user){
@@ -415,9 +415,9 @@ class User {
         $tokenStmt = $this->db->prepare($tokenQuery);
         $tokenStmt->bindValue(':username', trim($user), PDO::PARAM_STR);
         if ($tokenStmt->execute()) {
-            return ['message' => 'Token apagado com sucesso', 'token' => $token];
+            return ['mensagem' => 'Token apagado com sucesso', 'token' => $token];
         } else {
-            return ['error' => 'Erro ao apagar o token'];
+            return ['erro' => 'Erro ao apagar o token'];
         }
         $this->checkToken($user);
     }

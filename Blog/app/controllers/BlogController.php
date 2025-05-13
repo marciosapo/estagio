@@ -19,20 +19,33 @@ class BlogController extends Controller {
         }
     }
 
-    public function index(){
-        if(!isset($_POST['pesquisa']) && !isset($_POST['recente'])){
-            $posts = $this->postModel->getAllPosts("ASC");
-        }else if(isset($_POST['recente'])){
-            $posts = $this->postModel->getRecentPost();
-        }else if(isset($_POST['doRecente'])){
-            $posts = $this->postModel->getAllPosts("DESC");
-        }else if(isset($_POST['doAntigo'])){
-            $posts = $this->postModel->getAllPosts("ASC");
+    public function index() {
+        $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
+        $porPagina = 5;
+
+        if (!isset($_POST['pesquisa']) && !isset($_POST['recente'])) {
+            $resultado = $this->postModel->getAllPosts("ASC", $pagina, $porPagina);
+        } else if (isset($_POST['recente'])) {
+            $resultado = $this->postModel->getRecentPost();
+        } else if (isset($_POST['doRecente'])) {
+            $resultado = $this->postModel->getAllPosts("DESC", $pagina, $porPagina);
+        } else if (isset($_POST['doAntigo'])) {
+            $resultado = $this->postModel->getAllPosts("ASC", $pagina, $porPagina);
+        } else {
+            $resultado = $this->postModel->getPost($_POST['pesquisa']);
         }
-        else {
-            $posts = $this->postModel->getPost($_POST['pesquisa']);
+
+        if (!isset($resultado['posts'])) {
+            $resultado = [
+                'posts' => [],
+                'pagina_atual' => 1,
+                'por_pagina' => $porPagina,
+                'total_posts' => 0
+            ];
+        } else {
+            $resultado['posts'] = (array) $resultado['posts'];
         }
-        $this->renderView('../app/views/index.php', ['posts' => $posts]);
+        $this->renderView('../app/views/index.php', ['resultado' => $resultado]);
     }
     public function verPost()
     {
@@ -56,8 +69,8 @@ class BlogController extends Controller {
             header("Location: /Blog/");
             exit;
         }
-        $sucesso = null;
-        $erro = null;
+        $sucesso = $_SESSION['flash_sucesso'] ?? null;
+        $erro = $_SESSION['flash_erro'] ?? null;
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!isset($_POST['titulo']) || !isset($_POST['conteudo'])) {
                 return ['erro' => 'Dados incompletos'];
@@ -165,7 +178,6 @@ class BlogController extends Controller {
 
     public function atualizarDados() {
         if (isset($_SESSION['user'])) {
-            $sucesso = false;
             $token = $_SESSION['token'];
             $id_user = $this->userModel->verificarTokenUser($token, $this->userModel->db);
             if (!$id_user) {
