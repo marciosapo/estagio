@@ -100,7 +100,7 @@ class BlogController extends Controller {
             header("Location: /Blog/");
             exit;
         }
-        $error = null;
+        $erro = null;
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $username = $_POST['user'] ?? '';
             $password = $_POST['pass'] ?? '';
@@ -109,19 +109,20 @@ class BlogController extends Controller {
                 $_SESSION['user'] = $username;
                 $_SESSION['token'] = $result['token'];
                 $_SESSION['nivel'] = $result['nivel'];
+                $_SESSION['flash_sucesso'] = 'Sessão iniciada com sucesso.';
                 header("Location: /Blog/");
                 exit;
-            } elseif ($result['error'] === "Já existe um token ativo para este usuário") {
+            } elseif ($result['erro'] === "Já existe um token ativo para este usuário") {
                 $_SESSION['user'] = $username;
                 $_SESSION['token'] = $result['token'];
                 $_SESSION['nivel'] = $result['nivel'];
                 header("Location: /Blog/");
                 exit;
             } else {
-                $error = $result['error'];
+                $_SESSION['flash_erro'] = 'ERRO: ' . $result['erro'];
             }
         }
-        $this->renderView('../app/views/login.php', compact('error'));
+        $this->renderView('../app/views/login.php', compact('erro'));
     }
     public function logout() {
         if (isset($_SESSION['user'])) {
@@ -134,9 +135,24 @@ class BlogController extends Controller {
                 header("Location: /Blog/");
                 exit;
             } else {
-                $error = "Erro ao fazer logout. Tente novamente.";
-                $this->renderView('../app/views/login.php', compact('error'));
+                $erro = "Erro ao fazer logout. Tente novamente.";
+                $this->renderView('../app/views/login.php', compact('erro'));
             }
+        } else {
+            header("Location: /Blog/");
+            exit;
+        }
+    }
+    public function addAdmin(){
+        if(isset($_SESSION['nivel']) && $_SESSION['nivel'] != "Owner"){ 
+            header("Location: /Blog/");
+            exit;
+        } 
+        if (isset($_SESSION['user'])) {
+            $username = $_SESSION['user'];
+            $token = $_SESSION['token'];
+            $users = $this->userModel->getUsersByLevel('User'); 
+            $this->renderView('../app/views/addAdmin.php', ['users' => $users]);
         } else {
             header("Location: /Blog/");
             exit;
@@ -158,17 +174,26 @@ class BlogController extends Controller {
             $sucesso = false;
             $erro = null;
             if (isset($_POST['registar'])) {
-                $user = $_POST['username'];
-                $nome = $_POST['nome'];
-                $email = $_POST['email'];
-                $pass = $_POST['pass'];
-                $result = $this->userModel->novoUser($user, $nome, $email, $pass);
-                if (isset($result['mensagem'])) {
-                    $_SESSION['flash_sucesso'] = 'Novo utilizador registado com sucesso...';
-                } elseif (isset($result['erro'])) {
+                if (!preg_match('/^[a-zA-Z0-9_]+$/', $_POST['username'])) {
                     $_SESSION['flash_erro'] = 'ERRO: ' . $result['erro'];
                 }
-            }
+                else{ 
+                    $user = $_POST['username'];
+                    $nome = $_POST['nome'];
+                    $email = $_POST['email'];
+                    $pass = $_POST['pass'];
+                    $result = $this->userModel->novoUser($user, $nome, $email, $pass);
+                    if (isset($result['mensagem'])) {
+                        $_SESSION['flash_sucesso'] = 'Novo utilizador registado com sucesso...';
+                        $subject = 'Registo no Blog!';
+                        $message = "Obrigado por te registares no nosso blog!\nUrl: http://localhost/Blog";
+                        $headers = 'From: root@root.com';
+                        mail($email, $subject, $message, $headers);
+                    } elseif (isset($result['erro'])) {
+                        $_SESSION['flash_erro'] = 'ERRO: ' . $result['erro'];
+                    }
+                }
+            } 
             $this->renderView('../app/views/registar.php', compact('sucesso', 'erro'));
         } else {
             header("Location: /Blog/");
@@ -176,6 +201,44 @@ class BlogController extends Controller {
         }
     }
 
+    public function atualizarAdmin(){
+        if(!isset($_POST['users'])){
+            header("Location: /Blog/addAdmin");
+            exit;
+        } 
+        $token = $_SESSION['token'];
+        $user = $_POST['users'];  
+        $id_user = $this->userModel->verificarTokenUser($token, $this->userModel->db);
+        if (!$id_user) {
+            return ['erro' => 'Token inválido ou expirado'];
+        }
+        $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
+        $checkStmt = $this->userModel->db->prepare($checkQuery);
+        $checkStmt->bindValue(':id_user', $id_user, PDO::PARAM_INT);
+        $checkStmt->execute();
+        $nivel = $checkStmt->fetchColumn();
+        if ($nivel !== 'Owner') {
+            return ['erro' => 'Apenas utilizadores com nível Owner podem realizar esta operação.'];
+        }
+        $userCheckQuery = "SELECT id FROM users WHERE username = :username";
+        $userCheckStmt = $this->userModel->db->prepare($userCheckQuery);
+        $userCheckStmt->bindValue(':username', trim($user), PDO::PARAM_STR);
+        $userCheckStmt->execute();
+        $userExists = $userCheckStmt->fetchColumn();
+        if (!$userExists) {
+            return ['erro' => 'Usuário não encontrado.'];
+        }
+        $stmt = $this->userModel->db->prepare("Update users set nivel = 'Admin' WHERE username = ?");
+        $stmt->bindValue(':username', trim($user), PDO::PARAM_STR);
+        $success = $stmt->execute([$user]);
+        if (isset($success)) {
+            $_SESSION['flash_sucesso'] = $user . ' alterado para Administrador.';
+        } elseif (isset($result['erro'])) {
+            $_SESSION['flash_erro'] = 'ERRO: ' . $result['erro'];
+        }
+        header("Location: /Blog/addAdmin");
+        exit;
+    }
     public function atualizarDados() {
         if (isset($_SESSION['user'])) {
             $token = $_SESSION['token'];
@@ -184,25 +247,40 @@ class BlogController extends Controller {
                 return ['erro' => 'Token inválido ou expirado'];
             }
             if (isset($_POST['atualizarDados'])) {
+                $userAtual = $this->userModel->getUser($_POST['username']);
+                $nova_pass = $_POST['pass'] ?? '';
+                if (!$userAtual) {
+                    $_SESSION['flash_erro'] = 'Utilizador não encontrado.';
+                    header("Location: /Blog/dados/");
+                    exit;
+                }
                 if (isset($_FILES['imagem']) && $_FILES['imagem']['error'] === UPLOAD_ERR_OK) {
                     $imagem_binaria = file_get_contents($_FILES['imagem']['tmp_name']);
                 } else {
                     $imagem_binaria = null;
                 }
+                if (!empty($nova_pass) && !password_verify($nova_pass, $userAtual['pass'])) {
+                    $nova_pass_hash = password_hash($nova_pass, PASSWORD_DEFAULT);
+                } else {
+                    $nova_pass_hash = $userAtual['pass']; 
+                }
                 $data = [
                     'username' => $_POST['username'],
                     'nome' => $_POST['nome'],
                     'email' => $_POST['email'],
-                    'pass' => $_POST['pass'],
+                    'pass' => $nova_pass_hash,
                     'nivel' => $_POST['nivel'],
                     'imagem' => $imagem_binaria,
-                    'token' => $_POST['token']
+                    'token' => $_POST['token'],
+                    'Ultimo_Login' => $_POST['Ultimo_Login'] 
                 ];
                 $result = $this->userModel->updateUser($data);
                 if (isset($result['mensagem'])) {
                     $_SESSION['flash_sucesso'] = 'Dados atualizados com sucesso.';
                 } elseif (isset($result['erro'])) {
                     $_SESSION['flash_erro'] = 'ERRO: ' . $result['erro'];
+                }else {
+                    $_SESSION['flash_erro'] = 'Erro inesperado ao atualizar os dados.';
                 }
             }
             $formData = $data;

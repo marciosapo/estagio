@@ -21,6 +21,7 @@ class User {
                 users.nome,
                 users.criado,
                 users.nivel,
+                users.lastLogin,
                 tokens.token As user_token,
                 tokens.expira AS user_token_expira
             FROM users
@@ -43,7 +44,8 @@ class User {
                     'nivel' => $row['nivel'], 
                     'token' => $row['user_token'],
                     'token_expira' => $row['user_token_expira'],
-                    'token_status' => $status['status']    
+                    'token_status' => $status['status'],
+                    'Ultimo_Login' => $row['lastLogin']     
                 ];
             }
         } 
@@ -61,6 +63,7 @@ class User {
                 users.nivel,
                 users.pass,
                 users.imagem,
+                users.lastLogin,
                 tokens.token AS user_token,
                 tokens.expira AS user_token_expira
             FROM users
@@ -87,13 +90,55 @@ class User {
                 'token' => $row['user_token'],
                 'imagem' => $row['imagem'], 
                 'token_expira' => $row['user_token_expira'],
-                'token_status' => $status['status'] ?? null
+                'token_status' => $status['status'] ?? null,
+                'Ultimo_Login' => $row['lastLogin'] 
             ];
         }
-    
         return null;
     }
 
+    public function getUserApi($username) {
+        $query = "
+            SELECT 
+                users.id,
+                users.username AS user,
+                users.email,
+                users.nome,
+                users.criado,
+                users.nivel,
+                users.pass,
+                users.lastLogin,
+                tokens.token AS user_token,
+                tokens.expira AS user_token_expira
+            FROM users
+            LEFT JOIN tokens ON tokens.username = users.username
+            WHERE users.username = :user
+            ORDER BY users.id
+            LIMIT 1
+        ";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':user', trim($username), PDO::PARAM_STR);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if ($row) {
+            $status = $this->checkToken($username);
+            return [
+                'id' => $row['id'],
+                'username' => $row['user'],
+                'pass' => $row['pass'],
+                'email' => $row['email'],
+                'nome' => $row['nome'],
+                'criado' => $row['criado'],
+                'nivel' => $row['nivel'], 
+                'token' => $row['user_token'],
+                'token_expira' => $row['user_token_expira'],
+                'token_status' => $status['status'] ?? null,
+                'Ultimo_Login' => $row['lastLogin'] 
+            ];
+        }
+        return null;
+    }
     public function novoUser($username, $nome, $email, $pass) {
         $checkQuery = "SELECT COUNT(*) FROM users WHERE username = :user OR email = :email";
         $checkStmt = $this->db->prepare($checkQuery);
@@ -258,6 +303,14 @@ class User {
         }
     }
     
+    public function getUsersByLevel($level) {
+        $sql = "SELECT username FROM users WHERE nivel = :nivel";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':nivel', $level, PDO::PARAM_STR);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function recriarDB($data){
         $id_user = $this->verificarTokenUser($data['token']);
         if (!$id_user) {
@@ -381,6 +434,15 @@ class User {
         if ($existingToken) {
             return ['erro' => 'Já existe um token ativo para este usuário'];
         }
+        $query = "
+            UPDATE users SET 
+                lastLogin = :last
+            WHERE username = :username
+        ";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':username', trim($user), PDO::PARAM_STR);
+        $stmt->bindValue(':last', date('Y-m-d H:i:s'), PDO::PARAM_STR);
+        $stmt->execute(); 
         $token = generateToken(32);
         $datetime = new DateTime('now', new DateTimeZone('Europe/Lisbon'));
         $datetime->add(new DateInterval('PT1H'));

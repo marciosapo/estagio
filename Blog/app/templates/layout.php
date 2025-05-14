@@ -1,6 +1,6 @@
 <?php setlocale(LC_TIME, 'pt_PT.UTF-8', 'pt_PT', 'portuguese'); ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-PT">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

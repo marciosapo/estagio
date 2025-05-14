@@ -32,15 +32,19 @@
           </div>
           <div class="mb-3">
             <label for="pass" class="form-label">Palavra-passe</label>
-            <input type="password" value="<?php echo htmlspecialchars($result['pass']); ?>" name="pass" class="form-control" id="pass" required maxlength="255">
+            <input type="password" name="pass" class="form-control" placeholder="Nova palavra-passe (opcional)" id="pass" maxlength="255">
           </div>
           <div class="mb-3">
             <label for="pass" class="form-label">Nível</label>
             <input type="text" value="<?php echo htmlspecialchars($result['nivel']); ?>" name="nivel" class="form-control" id="nivel" maxlength="255" readonly>
           </div>
           <div class="mb-3">
+            <label for="token" class="form-label">Último Login</label>
+            <input type="text" value="<?php echo htmlspecialchars($result['Ultimo_Login']); ?>" name="Ultimo_Login" class="form-control" id="Ultimo_Login" maxlength="255" readonly>
+          </div>
+          <div class="mb-3">
             <label for="token" class="form-label">Token Ativo</label>
-            <input type="text" value="<?php echo htmlspecialchars($result['token']); ?>" name="token" class="form-control" id="token" required maxlength="255" readonly>
+            <input type="text" value="<?php echo htmlspecialchars($result['token']); ?>" name="token" class="form-control" id="token" maxlength="255" readonly>
           </div>
           <input type="submit" class="btn btn-primary w-100" name="atualizarDados" value="Atualizar">
         </form>

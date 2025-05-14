@@ -12,7 +12,8 @@ create table if not exists users(
 	pass varchar(255) NOT NULL,
 	criado timestamp default current_timestamp,
     nivel enum('Owner', 'Admin', 'User'),
-    imagem LONGBLOB
+    imagem LONGBLOB,
+    lastLogin timestamp
 );
 
 INSERT INTO users (username, email, nome, pass) VALUES('root', 'root@root.com', 'root', '1234'),

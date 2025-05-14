@@ -24,6 +24,11 @@
               <li><a class="dropdown-item" href="/Blog/dados">
                   <i class="bi bi-person-lines-fill me-2"></i> Ver Dados
               </a></li>
+              <?php if($_SESSION['nivel'] == "Owner"): ?>
+                <li><a class="dropdown-item" href="/Blog/addAdmin">
+                  <i class="bi bi-person-fill-add"></i> Adicionar Admin
+              </a></li>
+              <?php endif; ?>
               <li><a class="dropdown-item" href="/Blog/logout">
                   <i class="bi bi-box-arrow-right me-2"></i> Logout
               </a></li>

@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/blocks/flash.php'; ?>
 <section class="vh-100">
   <div class="container-fluid h-custom">
     <div class="row d-flex justify-content-center align-items-center h-100">
@@ -20,11 +21,6 @@
             <input type="password" id="form3Example4" name="pass" class="form-control form-control-lg"
                 placeholder="palavra-passe" />
           </div>
-          <?php if (isset($error)): ?>
-          <div class="d-flex align-items-end mt-4">
-            <label class="text-danger"><?php echo $error; ?></label>
-          </div>
-          <?php endif; ?>
           <div class="text-center text-lg-start mt-5 pt-2">
             <button  type="submit" data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-lg"
               style="padding-left: 2.5rem; padding-right: 2.5rem;">Login</button>

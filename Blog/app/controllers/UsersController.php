@@ -29,7 +29,11 @@ class UsersController extends Controller {
                 $this->sendJsonResponse(['erro' => 'Email inválido'], 400);
                 return;
             }
-            $username = $input['username'] ?? '';
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $input['username'])) {
+                $this->sendJsonResponse(['erro' => 'O nome de utilizador apenas pode conter letras, números e underscore (_)'], 400);
+                return;
+            }
+            $username = preg_replace('/[^a-zA-Z0-9_]/', '', $input['username']);
             $nome = $input['nome'] ?? '';
             $email = $input['email'] ?? '';
             $pass = $input['pass'] ?? '';
@@ -57,19 +61,25 @@ class UsersController extends Controller {
         }elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $raw = file_get_contents('php://input');
             $input = json_decode($raw, true);
+            file_put_contents('/tmp/debug.txt', print_r($input, true), FILE_APPEND);
+
             if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log("JSON inválido: " . json_last_error_msg());
                 $this->sendJsonResponse(['erro' => 'JSON inválido'], 400);
                 return;
             }
             $username = $input['username'] ?? '';
             if (empty($username)) {
+                error_log("Usuário vazio");
                 return $this->sendJsonResponse(['erro' => 'Usuário ausentes.'], 400);
             }
-            $user = $this->usersModel->getUser($username);
-            if ($user) {
+            $user = $this->usersModel->getUserApi($username);
+            if (is_array($user)) {
+                error_log("User encontrado: " . json_encode($user));
                 $this->sendJsonResponse($user);
-            } else {
-                $this->sendJsonResponse(['erro' => 'User não encontrado - ' . $user], 404);
+            }else {
+                error_log("User NÃO encontrado");
+                $this->sendJsonResponse(['erro' => 'User não encontrado'], 404);
             }
         }elseif ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
             $raw = file_get_contents('php://input');

@@ -148,7 +148,7 @@ if(isset($_POST['editarComentario'])){
 }  
 function verRespostas($respostas, $post, $nivel = 1) {
     if (empty($respostas)) return;
-    echo '<div class="ms-' . min($nivel * 2, 5) . ' border-start ps-3 mt-3">';
+    echo '<div class="ms-' . min($nivel * 2, 1) . ' ps-1 mt-3">';
     foreach ($respostas as $resposta):
 ?>
 <div class="mb-3">

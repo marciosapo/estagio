@@ -219,15 +219,21 @@
         <h2>6. Obter Utilizadores</h2>
         <p>Obtém uma lista de todos os utilizadores ou um utilizador específico pelo nome de utilizador.</p>
         <h3>Requisição:</h3>
-        <p><strong>GET</strong> para /api/users ou /api/users/{username}</p>
-
+        <p><strong>GET</strong> para /api/users</p>
         <h3>Exemplo de requisição com cURL:</h3>
         <div class="example">
             <code>curl -X GET http://localhost/api/users</code>
         </div>
+        <p><strong>POST</strong> para /api/users</p>
         <div class="example">
-            <code>curl -X GET http://localhost/api/users/exemploUser</code>
+            <code>curl -X POST http://localhost/api/users</code>
         </div>
+        <h3>Exemplo de Payload (JSON):</h3>
+          <pre>
+        {
+          "username": "nomeDeUtilizador"
+        }
+          </pre>
     </div>
 
     <!-- Apagar Registo de Utilizador -->

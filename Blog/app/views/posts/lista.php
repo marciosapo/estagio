@@ -18,7 +18,7 @@ $totalPaginas = ceil($totalPosts / $porPagina);
 </div>
 <?php require_once __DIR__ . '/../blocks/flash.php'; ?>
 <?php if (isset($posts) && !empty($posts)): ?>
-    <div class="row justify-content-center mt-4 g-4">
+    <div class="row justify-content-center mt-4 g-4 border-dark custom-shadow">
         <?php foreach ($posts as $post): ?>
             <div class="col-12 col-md-10">
                 <form method="POST" action="/Blog/verPost" class="h-100">
