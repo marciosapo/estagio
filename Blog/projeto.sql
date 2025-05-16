@@ -27,6 +27,7 @@ create table if not exists posts(
     title varchar(255),
     post TEXT NOT NULL,
     post_data timestamp default current_timestamp,
+    imagem LONGBLOB,
     FOREIGN KEY (id_user) REFERENCES users(id)
 );
 
@@ -48,5 +49,7 @@ CREATE TABLE if not exists tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     token VARCHAR(255) NOT NULL,
     username varchar(50) NOT NULL UNIQUE,
-    expira DATETIME NOT NULL
+    expira DATETIME NOT NULL,
+    apagar tinyint(1) default 0,
+    expira_apagar DATETIME
 );

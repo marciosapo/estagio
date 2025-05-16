@@ -14,8 +14,15 @@ class BlogController extends Controller {
 
     private function renovarToken() {
         $result = $this->userModel->renovarToken($_SESSION['user']);
-        if ($result) {
-            $_SESSION['token'] = $result['token'];
+        if (isset($result['mensagem'])) {
+            if (isset($result['token'])) {
+                $_SESSION['token'] = $result['token'];
+            }
+        } else {
+            session_unset();
+            session_destroy();
+            header("Location: /Blog");
+            exit;
         }
     }
 
@@ -59,14 +66,14 @@ class BlogController extends Controller {
                 $post = $this->postModel->getPostById($_POST['id']);
                 $this->renderView('../app/views/verPost.php', ['post' => $post]);
             } else {
-                header("Location: /Blog/");
+                header("Location: /Blog");
                 exit;
             }
         } 
     } 
     public function novoPost(){
         if (!isset($_SESSION['user'])) {
-            header("Location: /Blog/");
+            header("Location: /Blog");
             exit;
         }
         $sucesso = $_SESSION['flash_sucesso'] ?? null;
@@ -85,7 +92,12 @@ class BlogController extends Controller {
             if (empty($titulo) || empty($conteudo)) {
                 return ['erro' => 'Título e conteúdo não podem estar vazios'];
             }
-            $result = $this->postModel->criarPost($titulo, $conteudo, $token);
+            if (isset($_FILES['imagem']) && $_FILES['imagem']['error'] === UPLOAD_ERR_OK) {
+                $imagem_binaria = file_get_contents($_FILES['imagem']['tmp_name']);
+            } else {
+                $imagem_binaria = null;
+            }
+            $result = $this->postModel->criarPost($titulo, $conteudo, $imagem_binaria, $token);
             if (isset($result['mensagem'])) {
                 $_SESSION['flash_sucesso'] = 'Post criado com sucesso!';
             } elseif (isset($result['erro'])) {
@@ -97,7 +109,7 @@ class BlogController extends Controller {
 
     public function login() {
         if (isset($_SESSION['user']) && isset($_SESSION['token'])) {
-            header("Location: /Blog/");
+            header("Location: /Blog");
             exit;
         }
         $erro = null;
@@ -105,18 +117,23 @@ class BlogController extends Controller {
             $username = $_POST['user'] ?? '';
             $password = $_POST['pass'] ?? '';
             $result = $this->userModel->getToken($username, $password);
-            if (isset($result['token'])) {
+            if (isset($result['token']) && !isset($result['erro'])) {
                 $_SESSION['user'] = $username;
                 $_SESSION['token'] = $result['token'];
                 $_SESSION['nivel'] = $result['nivel'];
                 $_SESSION['flash_sucesso'] = 'Sessão iniciada com sucesso.';
-                header("Location: /Blog/");
+                header("Location: /Blog");
                 exit;
-            } elseif ($result['erro'] === "Já existe um token ativo para este usuário") {
+            }elseif (isset($result['token']) && isset($result['erro'])) {
                 $_SESSION['user'] = $username;
                 $_SESSION['token'] = $result['token'];
                 $_SESSION['nivel'] = $result['nivel'];
-                header("Location: /Blog/");
+                $_SESSION['flash_sucesso'] = 'Sessão retomada com sucesso.';
+                header("Location: /Blog");
+                exit;
+            } elseif (isset($result['erro'])) {
+                $_SESSION['flash_erro'] = $result['erro'];
+                header("Location: /Blog");
                 exit;
             } else {
                 $_SESSION['flash_erro'] = 'ERRO: ' . $result['erro'];
@@ -132,20 +149,20 @@ class BlogController extends Controller {
                 unset($_SESSION['user']);
                 unset($_SESSION['token']);
                 unset($_SESSION['nivel']);
-                header("Location: /Blog/");
+                header("Location: /Blog");
                 exit;
             } else {
                 $erro = "Erro ao fazer logout. Tente novamente.";
                 $this->renderView('../app/views/login.php', compact('erro'));
             }
         } else {
-            header("Location: /Blog/");
+            header("Location: /Blog");
             exit;
         }
     }
     public function addAdmin(){
         if(isset($_SESSION['nivel']) && $_SESSION['nivel'] != "Owner"){ 
-            header("Location: /Blog/");
+            header("Location: /Blog");
             exit;
         } 
         if (isset($_SESSION['user'])) {
@@ -154,7 +171,22 @@ class BlogController extends Controller {
             $users = $this->userModel->getUsersByLevel('User'); 
             $this->renderView('../app/views/addAdmin.php', ['users' => $users]);
         } else {
-            header("Location: /Blog/");
+            header("Location: /Blog");
+            exit;
+        }
+    }
+    public function remAdmin(){
+        if(isset($_SESSION['nivel']) && $_SESSION['nivel'] != "Owner"){ 
+            header("Location: /Blog");
+            exit;
+        } 
+        if (isset($_SESSION['user'])) {
+            $username = $_SESSION['user'];
+            $token = $_SESSION['token'];
+            $users = $this->userModel->getUsersByLevel('Admin'); 
+            $this->renderView('../app/views/remAdmin.php', ['users' => $users]);
+        } else {
+            header("Location: /Blog");
             exit;
         }
     }
@@ -165,7 +197,7 @@ class BlogController extends Controller {
             $result = $this->userModel->getUser($username); 
             $this->renderView('../app/views/dados.php', ['result' => $result]);
         } else {
-            header("Location: /Blog/");
+            header("Location: /Blog");
             exit;
         }
     }
@@ -196,7 +228,7 @@ class BlogController extends Controller {
             } 
             $this->renderView('../app/views/registar.php', compact('sucesso', 'erro'));
         } else {
-            header("Location: /Blog/");
+            header("Location: /Blog");
             exit;
         }
     }
@@ -239,6 +271,46 @@ class BlogController extends Controller {
         header("Location: /Blog/addAdmin");
         exit;
     }
+
+    public function removerAdmin(){
+        if(!isset($_POST['users'])){
+            header("Location: /Blog/remAdmin");
+            exit;
+        } 
+        $token = $_SESSION['token'];
+        $user = $_POST['users'];  
+        $id_user = $this->userModel->verificarTokenUser($token, $this->userModel->db);
+        if (!$id_user) {
+            return ['erro' => 'Token inválido ou expirado'];
+        }
+        $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
+        $checkStmt = $this->userModel->db->prepare($checkQuery);
+        $checkStmt->bindValue(':id_user', $id_user, PDO::PARAM_INT);
+        $checkStmt->execute();
+        $nivel = $checkStmt->fetchColumn();
+        if ($nivel !== 'Owner') {
+            return ['erro' => 'Apenas utilizadores com nível Owner podem realizar esta operação.'];
+        }
+        $userCheckQuery = "SELECT id FROM users WHERE username = :username";
+        $userCheckStmt = $this->userModel->db->prepare($userCheckQuery);
+        $userCheckStmt->bindValue(':username', trim($user), PDO::PARAM_STR);
+        $userCheckStmt->execute();
+        $userExists = $userCheckStmt->fetchColumn();
+        if (!$userExists) {
+            return ['erro' => 'Usuário não encontrado.'];
+        }
+        $stmt = $this->userModel->db->prepare("Update users set nivel = 'User' WHERE username = ?");
+        $stmt->bindValue(':username', trim($user), PDO::PARAM_STR);
+        $success = $stmt->execute([$user]);
+        if (isset($success)) {
+            $_SESSION['flash_sucesso'] = $user . ' alterado para User.';
+        } elseif (isset($result['erro'])) {
+            $_SESSION['flash_erro'] = 'ERRO: ' . $result['erro'];
+        }
+        header("Location: /Blog/remAdmin");
+        exit;
+    }
+
     public function atualizarDados() {
         if (isset($_SESSION['user'])) {
             $token = $_SESSION['token'];
@@ -286,7 +358,7 @@ class BlogController extends Controller {
             $formData = $data;
             $this->renderView('../app/views/dados.php', ['result' => $formData]);
         } else {
-            header("Location: /Blog/");
+            header("Location: /Blog");
             exit;
         }
     }

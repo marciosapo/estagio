@@ -9,7 +9,7 @@ function verificarToken($token, $db) {
         SELECT users.id AS id_user
         FROM tokens
         JOIN users ON tokens.username = users.username
-        WHERE tokens.token = :token AND tokens.expira > NOW()
+        WHERE tokens.token = :token
         LIMIT 1
     ";
     $stmt = $db->prepare($query);
@@ -31,7 +31,7 @@ function generateToken($length = 32, $db = null) {
             $randomIndex = random_int(0, strlen($characters) - 1);
             $token .= $characters[$randomIndex];
         }
-        if ($pdo) {
+        if ($db) {
             $stmt = $db->prepare("SELECT COUNT(*) FROM tokens WHERE token = :token");
             $stmt->bindValue(':token', $token, PDO::PARAM_STR);
             $stmt->execute();

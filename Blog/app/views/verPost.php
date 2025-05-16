@@ -1,9 +1,6 @@
 <?php
 
-if(!isset($_POST['id'])){
-    header("Location: /Blog/");
-    exit;
-}
+
 $formatter = new IntlDateFormatter(
     'pt_PT',
     IntlDateFormatter::LONG,
@@ -18,22 +15,16 @@ include 'blocks/responderForm.php';
 include 'blocks/novoComentario.php';
 include 'blocks/editarPost.php';
 
-if(isset($_POST['cancelar'])){
-    unset($_POST['responder']);
-    unset($_POST['editar']);
-    unset($_POST['responderid']);
-    unset($_POST['respondeid']);
-    unset($_POST['editarid']);
-} 
 if(isset($_POST['apagarPost'])){
+    echo "TEST: " . $_SESSION['user'] . " / " . $_SESSION['nivel'];
     if($_SESSION['nivel'] != "Owner" && $_SESSION['nivel'] != "Admin"){
-        header("Location: /Blog/");
+        header("Location: /Blog");
         exit;
     }else{
         $token = $_SESSION['token'];
         $id_user = $this->userModel->verificarTokenUser($token);
         if (!$id_user) {
-            header("Location: /Blog/");
+            header("Location: /Blog");
             exit;
         }
         $id = $_POST['id']; 
@@ -43,32 +34,44 @@ if(isset($_POST['apagarPost'])){
         } else {
             $_SESSION['flash_erro'] = 'Erro ao apagar o post';
         }
-
-        header("Location: /Blog/");
+        return_toBlog();
         exit;
     }  
 }
 
+if(isset($_POST['cancelar'])){
+    unset($_POST['responder']);
+    unset($_POST['editar']);
+    unset($_POST['responderid']);
+    unset($_POST['respondeid']);
+    unset($_POST['editarid']);
+} 
+
 if(isset($_POST['apagarEdicao'])){
-    header("Location: /Blog/");
+    header("Location: /Blog");
     exit;
 }
 
 if(isset($_POST['salvarEdicao'])){
     if($_SESSION['nivel'] != "Owner" && $_SESSION['nivel'] != "Admin"){
-        header("Location: /Blog/");
+        header("Location: /Blog");
         exit;
     }else{
         $token = $_SESSION['token'];
         $id_user = $this->userModel->verificarTokenUser($token);
         if (!$id_user) {
-            header("Location: /Blog/");
+            header("Location: /Blog");
             exit;
         }
         $id = $_POST['id'];
         $novoTitulo = trim($_POST['tituloEditado']);
-        $novoConteudo = trim($_POST['conteudoEditado']);  
-        $resultado = $this->postModel->editarPost($id, $novoTitulo, $novoConteudo, $token);
+        $novoConteudo = trim($_POST['conteudoEditado']); 
+        if (isset($_FILES['imagem']) && $_FILES['imagem']['error'] === UPLOAD_ERR_OK) {
+            $imagem_binaria = file_get_contents($_FILES['imagem']['tmp_name']);
+        } else {
+            $imagem_binaria = null;
+        }
+        $resultado = $this->postModel->editarPost($id, $novoTitulo, $novoConteudo, $imagem_binaria, $token);
         if ($resultado) {
             $_SESSION['flash_sucesso'] = 'Post editado com sucesso!';
         } else {
@@ -80,7 +83,7 @@ if(isset($_POST['salvarEdicao'])){
 }
 if (isset($_POST['novoComentario'])) {
     if (!isset($_SESSION['user'], $_SESSION['token'])) {
-        header("Location: /Blog/");
+        header("Location: /Blog");
         exit;
     }
     $token = $_SESSION['token'];
@@ -113,7 +116,7 @@ if(isset($_POST['apagarComentario'])){
     $token = $_SESSION['token'];
     $id_user = $this->userModel->verificarTokenUser($token);
     if (!$id_user) {
-        header("Location: /Blog/");
+        header("Location: /Blog");
         exit;
     }
     $id = $_POST['editarid'];
@@ -131,7 +134,7 @@ if(isset($_POST['editarComentario'])){
     $token = $_SESSION['token'];
     $id_user = $this->userModel->verificarTokenUser($token);
     if (!$id_user) {
-        header("Location: /Blog/");
+        header("Location: /Blog");
         exit;
     }
     $id = $_POST['editarid'];
@@ -204,7 +207,13 @@ function verRespostas($respostas, $post, $nivel = 1) {
                             </p>
 
                             <?php if (isset($_SESSION['user']) && $_SESSION['user'] == $post['postado'] && isset($_POST['editarPost'])): ?>
-                                <?php editarPostForm($post['id'], $post['title'], $post['post']) ?>
+                                <?php 
+                                    if(isset($post['imagem'])) {
+                                        $postImg = $post['imagem'];
+                                    }else{
+                                        $postImg = "/imgs/post.png";
+                                    }
+                                    editarPostForm($post['id'], $post['title'], $post['post'], $postImg) ?>
                             <?php endif; ?>
                         </div>
                     </div>

@@ -3,19 +3,16 @@
   <div class="container-fluid h-custom">
     <div class="row d-flex justify-content-center align-items-center h-100">
       <div class="col-md-9 col-lg-6 col-xl-5">
-        <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.webp"
+        <img src="/imgs/login.webp"
           class="img-fluid" alt="Sample image">
       </div>
       <div class="col-md-8 col-lg-6 col-xl-4 offset-xl-1">
         <form action="/Blog/login" method="POST">
-          <!-- Email input -->
           <div data-mdb-input-init class="form-outline mb-4">
           <label class="form-label mb-0"> Username</label>
             <input type="text" id="form3Example3" name="user" class="form-control form-control-lg"
               placeholder="username" />
           </div>
-
-          <!-- Password input -->
           <div data-mdb-input-init class="form-outline mb-0">
             <label class="form-label mb-0">Palavra-passe</label>  
             <input type="password" id="form3Example4" name="pass" class="form-control form-control-lg"

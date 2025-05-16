@@ -13,7 +13,7 @@ $formatter = new IntlDateFormatter(
 <h1 class="text-center text-primary mb-5 text-shadow">Posts do Blog</h1>
 
 <div class="container">
-<form method="POST" action="/Blog/" class="d-flex flex-wrap gap-2 justify-content-center mb-5">
+<form method="POST" action="/Blog" class="d-flex flex-wrap gap-2 justify-content-center mb-5">
 <div class="col-12 col-md-4">
   <input class="form-control form-control-lg" name="pesquisa" type="search" placeholder="Pesquisar post..." aria-label="Pesquisa">
 </div> 

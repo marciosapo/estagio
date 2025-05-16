@@ -9,4 +9,12 @@ function refresh_Pagina($id){
             document.getElementById("redirectForm").submit();
         </script>';
 } 
+function return_toBlog() {
+    echo '
+        <form id="returnForm" action="/Blog" method="POST">
+        </form>
+        <script type="text/javascript">
+            document.getElementById("returnForm").submit();
+        </script>';
+}
 ?>

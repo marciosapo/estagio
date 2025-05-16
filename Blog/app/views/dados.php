@@ -15,7 +15,7 @@
                   <img src="data:image/jpeg;base64,<?php echo base64_encode($result['imagem']); ?>" alt="Avatar Atual" width="100" height="100">
               </div>
           <?php endif; ?>
-          <input type="file" class="form-control" name="imagem" accept="image/*">
+          <input type="file" class="form-control" name="imagem" aaccept="image/jpeg, image/png">
         </div>
           </div>
           <div class="mb-3">

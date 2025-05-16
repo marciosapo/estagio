@@ -3,7 +3,10 @@
 class Router {
 
     public function route() {
-        $url = isset($_GET['url']) ? rtrim($_GET['url'], '/') : '';
+        
+        $url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $url = ltrim($url, '/');  // remove a barra inicial
+
         if ($url === 'api.html') {
             $file_path = realpath($_SERVER['DOCUMENT_ROOT'] . '/Blog/public/api.html');
             if ($file_path && file_exists($file_path)) {
@@ -17,13 +20,21 @@ class Router {
             }
             return;
         }
+
         $url_parts = explode('/', $url);
         $first_segment = array_shift($url_parts);
-        if ($first_segment != 'api' && $first_segment != 'Blog') {
+
+        if (empty($first_segment)) {
             header('Location: /Blog');
             exit();
         }
-        $static_file = '/Blog/public/imgs/';
+
+        if (!in_array($first_segment, ['api', 'Blog', 'app'])) {
+            header('Location: /Blog');
+            exit();
+        }
+
+        $static_file = '/public/imgs/';
         if (strpos($url, $static_file) !== false) {
             $file_path = realpath($_SERVER['DOCUMENT_ROOT'] . '/' . $url);
             if ($file_path && strpos($file_path, $_SERVER['DOCUMENT_ROOT'] . '/Blog/public/imgs/') === 0 && file_exists($file_path)) {
@@ -32,6 +43,24 @@ class Router {
                 exit;
             }
         }
+
+        $script_path = '/app/scripts/';
+        if (strpos($url, $script_path) !== false) {
+            $file_path = realpath($_SERVER['DOCUMENT_ROOT'] . '/' . $url);
+            if (
+                $file_path &&
+                strpos($file_path, $_SERVER['DOCUMENT_ROOT'] . $script_path) === 0 &&
+                file_exists($file_path)
+            ) {
+                include $file_path;
+                exit;
+            } else {
+                header("HTTP/1.1 404 Not Found");
+                echo "Script não encontrado.";
+                exit;
+            }
+        }
+
         if ($first_segment === 'api') {
             if (empty($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
                 $user_agent = strtolower($_SERVER['HTTP_USER_AGENT']);

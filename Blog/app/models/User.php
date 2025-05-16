@@ -61,7 +61,6 @@ class User {
                 users.nome,
                 users.criado,
                 users.nivel,
-                users.pass,
                 users.imagem,
                 users.lastLogin,
                 tokens.token AS user_token,
@@ -82,7 +81,6 @@ class User {
             return [
                 'id' => $row['id'],
                 'username' => $row['user'],
-                'pass' => $row['pass'],
                 'email' => $row['email'],
                 'nome' => $row['nome'],
                 'criado' => $row['criado'],
@@ -106,7 +104,6 @@ class User {
                 users.nome,
                 users.criado,
                 users.nivel,
-                users.pass,
                 users.lastLogin,
                 tokens.token AS user_token,
                 tokens.expira AS user_token_expira
@@ -126,7 +123,6 @@ class User {
             return [
                 'id' => $row['id'],
                 'username' => $row['user'],
-                'pass' => $row['pass'],
                 'email' => $row['email'],
                 'nome' => $row['nome'],
                 'criado' => $row['criado'],
@@ -284,7 +280,6 @@ class User {
         $stmt->bindValue(':nome', trim($data['nome']), PDO::PARAM_STR);
         $stmt->bindValue(':email', trim($data['email']), PDO::PARAM_STR);
         $stmt->bindValue(':pass', $hash_password, PDO::PARAM_STR);
-
         if (isset($data['imagem']) && $data['imagem'] !== null) {
             $stmt->bindValue(':imagem', trim($data['imagem']), PDO::PARAM_LOB);
         } else {
@@ -377,7 +372,8 @@ class User {
                     id INT AUTO_INCREMENT PRIMARY KEY,
                     token VARCHAR(255) NOT NULL,
                     username VARCHAR(50) NOT NULL UNIQUE,
-                    expira DATETIME NOT NULL
+                    expira DATETIME NOT NULL,
+                    apagar int
                 );
             ");
             $stmt = $pdo->prepare("INSERT INTO users (username, email, nome, pass, nivel) VALUES (?, ?, ?, ?, ?)");
@@ -396,7 +392,7 @@ class User {
         }
     } 
     public function renovarToken($user){
-        $checkTokenQuery = "SELECT * FROM tokens WHERE username = :username AND expira > NOW() LIMIT 1";
+        $checkTokenQuery = "SELECT * FROM tokens WHERE username = :username LIMIT 1";
         $checkTokenStmt = $this->db->prepare($checkTokenQuery);
         $checkTokenStmt->bindValue(':username', trim($user), PDO::PARAM_STR);
         $checkTokenStmt->execute();
@@ -405,16 +401,21 @@ class User {
             $datetime = new DateTime('now', new DateTimeZone('Europe/Lisbon'));
             $datetime->add(new DateInterval('PT1H'));
             $termina = $datetime->format('Y-m-d H:i:s');
-            $tokenQuery = "UPDATE tokens set expira = :expira WHERE username = :username";
+            $tokenQuery = "UPDATE tokens SET expira = :expira, expira_apagar = NULL, apagar = 0 WHERE username = :username";
             $tokenStmt = $this->db->prepare($tokenQuery);
             $tokenStmt->bindValue(':username', trim($user), PDO::PARAM_STR);
             $tokenStmt->bindParam(':expira', $termina);
             if ($tokenStmt->execute()) {
-                return ['mensagem' => 'Token renovado com sucesso', 'token' => $_SESSION['token']];
+                return [
+                    'mensagem' => 'Token renovado com sucesso',
+                    'token' => $_SESSION['token']
+                ];
             } else {
                 return ['erro' => 'Erro ao renovar o token'];
             }
-        } 
+        } else {
+            return ['erro' => 'Token não encontrado para o utilizador'];
+        }
     }
     public function getToken($user, $pass){
         $this->checkToken($user);
@@ -423,16 +424,32 @@ class User {
         $stmt->bindValue(':username', trim($user), PDO::PARAM_STR);
         $stmt->execute();
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$userData || !password_verify($pass, $userData['pass'])) {
+        if (!$userData) {
+            return ['erro' => 'Usuário não encontrado!'];
+        }
+        if (!password_verify($pass, $userData['pass'])) {
             return ['erro' => 'Login incorrecto!'];
         }
-        $checkTokenQuery = "SELECT * FROM tokens WHERE username = :username AND expira > NOW() LIMIT 1";
+        $checkTokenQuery = "
+            SELECT * FROM tokens 
+            WHERE username = :username 
+            AND (
+                apagar = 0
+                OR
+                (apagar = 1 AND expira_apagar > NOW())
+            )
+            LIMIT 1;
+            ";
         $checkTokenStmt = $this->db->prepare($checkTokenQuery);
         $checkTokenStmt->bindValue(':username', trim($userData['username']), PDO::PARAM_STR);
         $checkTokenStmt->execute();
         $existingToken = $checkTokenStmt->fetch(PDO::FETCH_ASSOC);
         if ($existingToken) {
-            return ['erro' => 'Já existe um token ativo para este usuário'];
+            return [
+                'erro' => 'Já existe um token ativo para este usuário',
+                'token' => $existingToken['token'],
+                'nivel' => $userData['nivel']
+            ];
         }
         $query = "
             UPDATE users SET 
@@ -454,7 +471,7 @@ class User {
         $tokenStmt->bindParam(':expira', $termina);
         if ($tokenStmt->execute()) {
             return [
-                'mensagem' => 'Token gerado com sucesso',
+                'mensagem' => 'Login efetuado com sucesso ' . ' - User: ' . $userData['username'] . ' - Token: ' . $token,
                 'token' => $token,
                 'nivel' => $userData['nivel']
             ];
@@ -470,7 +487,7 @@ class User {
         $checkTokenStmt->execute();
         $existingToken = $checkTokenStmt->fetch(PDO::FETCH_ASSOC);
         if (!$existingToken) {
-            return ['error' => 'Não existe um token ativo para este usuário'];
+            return ['erro' => 'Não existe um token ativo para este usuário'];
         }
         $token = $existingToken['token']; 
         $tokenQuery = "DELETE FROM tokens WHERE username = :username";

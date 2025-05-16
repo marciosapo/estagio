@@ -169,10 +169,10 @@ class UsersController extends Controller {
             }
     
             $users = $this->usersModel->getToken($user, $pass);
-            if ($users) {
-                $this->sendJsonResponse($users);
+            if (isset($users['mensagem'])) {
+                $this->sendJsonResponse(['mensagem' => $users['mensagem']]);
             } else {
-                $this->sendJsonResponse(['erro' => 'Credenciais inválidas'], 401);
+                $this->sendJsonResponse(['erro' => $users['erro']], 401);
             }
         }
     }
@@ -190,7 +190,9 @@ class UsersController extends Controller {
             }
             $users = $this->usersModel->deleteToken($user);
             if ($users) {
-                $this->sendJsonResponse($users);
+                $this->sendJsonResponse(['mensagem' => 'Logout efetuado com sucesso!']);
+            }else {
+                $this->sendJsonResponse(['erro' => 'Falha a efetuar o logout'], 401);
             }
         }
     }

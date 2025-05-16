@@ -2,7 +2,7 @@
 if (isset($_SESSION['user']) && !isset($_SESSION['token'])){
     session_unset();
     session_destroy();
-    header("Location: /Blog/");
+    header("Location: /Blog");
     exit;
 }
 if (isset($_SESSION['user']) && isset($_SESSION['token'])) {
@@ -14,7 +14,7 @@ if (isset($_SESSION['user']) && isset($_SESSION['token'])) {
     if (!$id_user) {
         session_unset();
         session_destroy();
-        header("Location: /Blog/");
+        header("Location: /Blog");
         exit;
     }
 }

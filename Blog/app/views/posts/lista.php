@@ -16,7 +16,7 @@ $totalPaginas = ceil($totalPosts / $porPagina);
   <?php endif; ?>
 </form>
 </div>
-<?php require_once __DIR__ . '/../blocks/flash.php'; ?>
+<?php require_once __DIR__ . '/../blocks/flash.php'; ?> 
 <?php if (isset($posts) && !empty($posts)): ?>
     <div class="row justify-content-center mt-4 g-4 border-dark custom-shadow">
         <?php foreach ($posts as $post): ?>
@@ -26,7 +26,14 @@ $totalPaginas = ceil($totalPosts / $porPagina);
                     <div class="card shadow-sm border-0 bg-light h-100">
     <div class="d-flex">
         <div class="w-25">
-            <img src="https://www.blogtyrant.com/wp-content/uploads/2020/02/how-long-should-a-blog-post-be.png" 
+            <?php 
+                if(isset($post['imagem']) && !empty($post['imagem'])) {
+                    $postImg = $post['imagem'];
+                }else{
+                    $postImg = "/imgs/post.png";
+                } 
+                ?>
+            <img src="<?php echo $postImg; ?>" 
                  alt="Imagem do post" 
                  class="img-fluid object-fit-cover rounded" 
                  style="height: 250px;">

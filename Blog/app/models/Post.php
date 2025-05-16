@@ -20,6 +20,7 @@ class Post {
                 posts.id AS post_id,
                 posts.title,
                 posts.post AS conteudo,
+                posts.imagem,
                 posts.post_data AS post_data_post,
                 autor_post.username AS nome_autor_post
             FROM posts
@@ -40,12 +41,20 @@ class Post {
         foreach ($rows as $row) {
             $postId = $row['post_id'];
             $comentarios = getComentarios($this->db, $postId);
+            if ($row['imagem']) {
+                $mime = "image/jpeg";
+                $data = base64_encode($row['imagem']);
+                $postImg = "data:$mime;base64,$data";
+            } else {
+                $postImg = "/imgs/post.png";
+            }
             $posts[] = [
                 'id' => $postId,
                 'title' => $row['title'],
                 'post' => $row['conteudo'],
                 'post_data' => $row['post_data_post'],
                 'postado' => $row['nome_autor_post'],
+                'imagem' => $postImg,
                 'comentarios' => $comentarios,
                 'nComentarios' => nComentarios($comentarios)
             ];
@@ -61,7 +70,6 @@ class Post {
     public function getPost($search, $pagina = 1, $porPagina = 5) {
         $pesquisa = '%' . strtolower($search) . '%';
         $offset = ($pagina - 1) * $porPagina;
-
         $countQuery = "
             SELECT COUNT(*) AS total
             FROM posts
@@ -70,7 +78,6 @@ class Post {
         $countStmt = $this->db->prepare($countQuery);
         $countStmt->execute([$pesquisa]);
         $totalPosts = $countStmt->fetchColumn();
-
         if ($totalPosts == 0) {
             return [
                 'posts' => [],
@@ -79,12 +86,12 @@ class Post {
                 'total_posts' => 0
             ];
         }
-
         $query = "
             SELECT 
                 posts.id AS post_id,
                 posts.title,
                 posts.post AS conteudo,
+                posts.imagem,
                 posts.post_data AS post_data_post,
                 autor_post.username AS nome_autor_post
             FROM posts
@@ -109,12 +116,20 @@ class Post {
             $postId = $row['post_id'];
             $postIds[] = $postId;
             $comentarios = getComentarios($this->db, $postId);
+            if ($row['imagem']) {
+                $mime = "image/jpeg";
+                $data = base64_encode($row['imagem']);
+                $postImg = "data:$mime;base64,$data";
+            } else {
+                $postImg = "/imgs/post.png";
+            }
             $posts[$postId] = [
                 'id' => $postId,
                 'title' => $row['title'] ?? 'Sem título',
                 'post' => $row['conteudo'] ?? '',
                 'post_data' => $row['post_data_post'] ?? date('Y-m-d H:i:s'),
                 'postado' => $row['nome_autor_post'] ?? 'Anônimo',
+                'imagem' => $postImg,
                 'comentarios' => $comentarios,
                 'nComentarios' => nComentarios($comentarios)
             ];
@@ -138,6 +153,7 @@ class Post {
                 posts.id AS post_id,
                 posts.title,
                 posts.post AS conteudo,
+                posts.imagem,
                 posts.post_data AS post_data_post,
                 autor_post.username AS nome_autor_post,
                 comentarios.id AS comentario_id,
@@ -160,12 +176,20 @@ class Post {
             return null;
         }
         $comentarios = getComentarios($this->db, $rows[0]['post_id']);
-        $post = [
+        if ($rows[0]['imagem']) {
+                $mime = "image/jpeg";
+                $data = base64_encode($rows[0]['imagem']);
+                $postImg = "data:$mime;base64,$data";
+            } else {
+                $postImg = "/imgs/post.png";
+            }
+            $post = [
             'id' => $rows[0]['post_id'],
             'title' => $rows[0]['title'],
             'post' => $rows[0]['conteudo'],
             'post_data' => $rows[0]['post_data_post'],
-            'postado' => $rows[0]['nome_autor_post'], 
+            'postado' => $rows[0]['nome_autor_post'],
+            'imagem' => $postImg, 
             'comentarios' => $comentarios,
             'nComentarios' => nComentarios($comentarios)
         ];
@@ -177,6 +201,7 @@ class Post {
                 posts.id AS post_id,
                 posts.title,
                 posts.post AS conteudo,
+                posts.imagem,
                 posts.post_data AS post_data_post,
                 autor_post.username AS nome_autor_post
             FROM posts
@@ -197,12 +222,20 @@ class Post {
         }
         $postId = $postRow['post_id'];
         $comentarios = getComentarios($this->db, $postId);
-        $post = [
+        if ($row['imagem']) {
+                $mime = "image/jpeg";
+                $data = base64_encode($row['imagem']);
+                $postImg = "data:$mime;base64,$data";
+            } else {
+                $postImg = "/imgs/post.png";
+            }
+            $post = [
             'id' => $postId,
             'title' => $postRow['title'],
             'post' => $postRow['conteudo'],
             'post_data' => $postRow['post_data_post'],
             'postado' => $postRow['nome_autor_post'],
+            'imagem' => $postImg,
             'comentarios' => $comentarios,
             'nComentarios' => nComentarios($comentarios)
         ];
@@ -213,21 +246,29 @@ class Post {
             'total_posts' => 1
         ];
     }
-    public function criarPost($title, $post, $token) {
+    public function criarPost($title, $post, $postImg, $token) {
         $id_user = $this->verificarTokenUser($token);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
         }
         $checkQuery = "SELECT nivel FROM users WHERE id = :id_user";
         $checkStmt = $this->db->prepare($checkQuery);
-        $checkStmt->bindParam(':id_user', $id_user);
+        $checkStmt->bindValue(':id_user', $id_user, PDO::PARAM_INT);
         $checkStmt->execute();
         $nivel = $checkStmt->fetchColumn();
         if ($nivel !== 'Owner') {
             return ['erro' => 'Apenas utilizadores com nível Owner podem realizar esta operação.'];
         }
-        $stmt = $this->db->prepare("INSERT INTO posts (title, post, id_user, post_data) VALUES (?, ?, ?, NOW())");
-        $success = $stmt->execute([$title, $post, $id_user]);
+        $stmt = $this->db->prepare("INSERT INTO posts (title, post, id_user, post_data, imagem) VALUES (:title, :post, :id_user, NOW(), :postImg)");
+        $stmt->bindValue(':title', trim($title), PDO::PARAM_STR);
+        $stmt->bindValue(':post', trim($post), PDO::PARAM_STR);
+        $stmt->bindValue(':id_user', $id_user, PDO::PARAM_INT);
+        if (isset($postImg) && $postImg !== null) {
+            $stmt->bindValue(':postImg', trim($postImg), PDO::PARAM_LOB);
+        } else {
+            $stmt->bindValue(':postImg', null, PDO::PARAM_NULL);
+        }
+        $success = $stmt->execute();
         if ($success) {
             return ['mensagem' => 'Post criado com sucesso'];
         } else {
@@ -235,7 +276,7 @@ class Post {
         }
     }
 
-    public function editarPost($id_post, $title, $post_content, $token) {
+    public function editarPost($id_post, $title, $post_content, $postImg, $token) {
         $id_user = $this->verificarTokenUser($token);
         if (!$id_user) {
             return ['erro' => 'Token inválido ou expirado'];
@@ -248,8 +289,30 @@ class Post {
         if ($nivel !== 'Owner' && $nivel !== 'Admin') {
             return ['erro' => 'Apenas utilizadores com nível Owner ou Admin podem editar posts.'];
         }
-        $stmt = $this->db->prepare("UPDATE posts SET title = ?, post = ? WHERE id = ?");
-        $success = $stmt->execute([$title, $post_content, $id_post]);
+        $query = "
+            UPDATE posts SET 
+                title = :title,
+                post = :post,
+                imagem = :imagem
+            WHERE id = :id
+        ";
+        if (!empty($data['pass'])) {
+            if (!preg_match('/^\$2y\$/', $data['pass'])) {
+                $hash_password = password_hash($data['pass'], PASSWORD_DEFAULT);
+            } else {
+                $hash_password = $data['pass'];
+            }
+        }
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':title', trim($title), PDO::PARAM_STR);
+        $stmt->bindValue(':post', trim($post_content), PDO::PARAM_STR);
+        $stmt->bindValue(':id', $id_post, PDO::PARAM_INT);
+        if (isset($postImg) && $postImg !== null) {
+            $stmt->bindValue(':imagem', trim($postImg), PDO::PARAM_LOB);
+        } else {
+            $stmt->bindValue(':imagem', null, PDO::PARAM_NULL);
+        }
+        $success = $stmt->execute();
         if ($success) {
             return ['mensagem' => 'Post editado com sucesso'];
         } else {
@@ -270,20 +333,34 @@ class Post {
         if ($nivel !== 'Owner') {
             return ['erro' => 'Apenas utilizadores com nível Owner podem realizar esta operação.'];
         }
+        try {
+        $this->db->beginTransaction();
         $verifica = $this->db->prepare("SELECT id, id_user FROM posts WHERE id = :id_post");
         $verifica->bindValue(':id_post', $id_post, PDO::PARAM_INT);
         $verifica->execute();
         if ($verifica->rowCount() == 0) {
+            $this->db->rollBack();
             return ['erro' => 'Post não encontrado'];
         }
         $post = $verifica->fetch(PDO::FETCH_ASSOC);
         $apagarComentarios = $this->db->prepare("DELETE FROM comentarios WHERE id_parent = :id_post");
         $apagarComentarios->bindParam(':id_post', $id_post, PDO::PARAM_INT);
-        $apagarComentarios->execute();
+        if (!$apagarComentarios->execute()) {
+            $this->db->rollBack();
+            return ['erro' => 'Erro ao apagar os comentários'];
+        }
         $apagarPost = $this->db->prepare("DELETE FROM posts WHERE id = :id_post");
         $apagarPost->bindValue(':id_post', $id_post, PDO::PARAM_INT);
-        $apagarPost->execute();
+        if (!$apagarPost->execute()) {
+            $this->db->rollBack();
+            return ['erro' => 'Erro ao apagar o post'];
+        }
+        $this->db->commit();
         return ['mensagem' => 'Post e comentários apagados com sucesso'];
+    } catch (Exception $e) {
+        $this->db->rollBack();
+        return ['erro' => 'Erro ao apagar o post: ' . $e->getMessage()];
+    }
     }
 
     public function criarComentario($comentario, $id_post, $token, $id_parent = null) {
