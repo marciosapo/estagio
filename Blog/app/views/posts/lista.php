@@ -10,9 +10,11 @@ $totalPaginas = ceil($totalPosts / $porPagina);
       isset($_SESSION['nivel']) &&
       ($_SESSION['nivel'] == "Owner" || $_SESSION['nivel'] == "Admin")
   ): ?>
-    <a class="btn btn-outline-dark btn-lg d-flex align-items-center" href="/Blog/novoPost/">
-      <i class="bi bi-pencil-square me-2"></i> Novo Post
-    </a>
+    <div class="col-6 col-md-auto">
+      <a href="/Blog/novoPost/" class="btn btn-outline-dark btn-lg d-flex align-items-center">
+        <i class="bi bi-pencil-square me-2"></i> Novo Post
+      </a>
+</div>
   <?php endif; ?>
 </form>
 </div>
@@ -25,31 +27,14 @@ $totalPaginas = ceil($totalPosts / $porPagina);
                     <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
                     <div class="card shadow-sm border-0 bg-light h-100">
     <div class="d-flex">
-        <div class="w-25">
-            <?php 
-                if(isset($post['imagem']) && !empty($post['imagem'])) {
-                    $postImg = $post['imagem'];
-                }else{
-                    $postImg = "/imgs/post.png";
-                } 
-                ?>
-            <img src="<?php echo $postImg; ?>" 
-                 alt="Imagem do post" 
-                 class="img-fluid object-fit-cover rounded" 
-                 style="height: 250px;">
-        </div>
+        <?php include __DIR__ . '/../blocks/imagemPost.php'; ?>
         <div class="card-body w-75">
             <h4 class="card-title fw-semibold text-primary"><?php echo htmlspecialchars($post['title']); ?></h4>
             <p class="card-text text-dark mt-4"><?php echo nl2br(htmlspecialchars($post['post'])); ?></p>
         </div>
     </div>
     <div class="card-footer d-flex justify-content-between align-items-center bg-white border-0 pt-0 px-4 pb-4">
-        <small class="text-muted mt-4">
-            Postado por <strong><?php echo htmlspecialchars($post['postado']); ?></strong> 
-            em <time datetime="<?php echo $post['post_data']; ?>">
-                <?php echo $formatter->format(new DateTime($post['post_data'])); ?>
-            </time>
-        </small>
+        <?php include __DIR__ . '/../blocks/postadoPor.php'; ?>
         <div class="d-flex gap-2 mt-4">
             <button type="submit" class="btn btn-outline-secondary btn-sm" name="verComentarios">
                 Comentários (<?php echo $post['nComentarios']; ?>)
@@ -71,29 +56,7 @@ $totalPaginas = ceil($totalPosts / $porPagina);
         <?php endforeach; ?>
         <?php if ($totalPaginas > 1): ?>
 <div class="d-flex justify-content-center mt-5">
-    <nav>
-        <ul class="pagination">
-            <?php if ($paginaAtual > 1): ?>
-                <li class="page-item">
-                    <a class="page-link" href="?pagina=<?php echo $paginaAtual - 1; ?>">Anterior</a>
-                </li>
-            <?php else: ?>
-                <li class="page-item disabled"><span class="page-link">Anterior</span></li>
-            <?php endif; ?>
-            <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                <li class="page-item <?php echo ($i == $paginaAtual) ? 'active' : ''; ?>">
-                    <a class="page-link" href="?pagina=<?php echo $i; ?>"><?php echo $i; ?></a>
-                </li>
-            <?php endfor; ?>
-            <?php if ($paginaAtual < $totalPaginas): ?>
-                <li class="page-item">
-                    <a class="page-link" href="?pagina=<?php echo $paginaAtual + 1; ?>">Próxima</a>
-                </li>
-            <?php else: ?>
-                <li class="page-item disabled"><span class="page-link">Próxima</span></li>
-            <?php endif; ?>
-        </ul>
-    </nav>
+    <?php include __DIR__ . '/../blocks/paginacao.php'; ?>
 </div>
 <?php endif; ?>
     </div>

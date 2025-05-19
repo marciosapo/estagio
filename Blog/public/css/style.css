@@ -22,6 +22,9 @@ footer {
 .text-shadow {
     text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 }
+.img-sombra {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
 .no-resize {
 resize: none;
 }

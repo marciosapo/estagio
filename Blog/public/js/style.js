@@ -50,7 +50,7 @@ function verificarToken() {
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Token renovado!',
-                                        text: res.mensagem || 'Token renovado!',
+                                        text: res.mensagem || 'Sessão renovada!',
                                         timer: 3000,
                                         showConfirmButton: false
                                     });

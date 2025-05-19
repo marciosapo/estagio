@@ -3,12 +3,21 @@
 class Router {
 
     public function route() {
-        
         $url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $url = ltrim($url, '/');  // remove a barra inicial
-
+        $url = ltrim($url, '/');
         if ($url === 'api.html') {
-            $file_path = realpath($_SERVER['DOCUMENT_ROOT'] . '/Blog/public/api.html');
+            $user_agent = strtolower($_SERVER['HTTP_USER_AGENT'] ?? '');
+            if (empty($user_agent)){
+                echo "Acesso proibido. Manual API apenas pode ser acedido pelo browser.";
+                exit();
+            }
+            if (strpos($user_agent, 'postman') !== false || 
+                strpos($user_agent, 'curl') !== false || 
+                strpos($user_agent, 'insomnia') !== false) {
+                echo "Acesso proibido. Manual API apenas pode ser acedido pelo browser.";
+                exit();
+            } 
+            $file_path = realpath($_SERVER['DOCUMENT_ROOT'] . 'api.html');
             if ($file_path && file_exists($file_path)) {
                 header('Content-Type: text/html');
                 readfile($file_path);
@@ -72,6 +81,10 @@ class Router {
                     echo "Acesso proibido. A API não pode ser acessada diretamente pelo navegador.";
                     exit();
                 } 
+            }
+            if(empty($url_parts)) {
+                echo "Ínvalido comando na api - API: http://localhost/api.html";
+                exit();
             }
             $this->handleApiRequest($url_parts);
         } else {

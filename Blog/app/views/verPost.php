@@ -195,17 +195,17 @@ function verRespostas($respostas, $post, $nivel = 1) {
                 <?php require_once __DIR__ . '/blocks/flash.php'; ?>
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-body d-flex gap-3 align-items-stretch">
-                        <div class="w-25">
-                            <img src="https://www.blogtyrant.com/wp-content/uploads/2020/02/how-long-should-a-blog-post-be.png" class="img-fluid object-fit-cover rounded" style="height: 250px;" alt="Imagem do post">
-                        </div>
+                        <?php include __DIR__ . '/blocks/imagemPost.php'; ?>
                         <div class="flex-grow-1 d-flex flex-column justify-content-between">
                             <h3 class="text-primary fw-semibold"><?php echo htmlspecialchars($post['title']); ?></h3>
                             <p class="mt-4 mb-4 text-break"><?php echo nl2br(htmlspecialchars($post['post'])); ?></p>
-                            <p class="text-muted text-end">
-                                Postado por <strong><?php echo htmlspecialchars($post['postado']); ?></strong> em 
-                                <time datetime="<?php echo $post['post_data']; ?>"><?php echo $formatter->format(new DateTime($post['post_data'])); ?></time>
-                            </p>
-
+                            <?php include __DIR__ . '/blocks/postadoPor.php'; ?>
+                            <?php if (isset($_SESSION['user']) && $_SESSION['user'] === $post['postado']): ?>
+                                <div class="col-6 col-md-auto">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm" name="editarPost">Editar</button>
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" name="apagarPost" onclick="return confirm('Tem certeza que deseja apagar este post?');">Apagar</button>
+                                </div>
+                            <?php endif; ?>
                             <?php if (isset($_SESSION['user']) && $_SESSION['user'] == $post['postado'] && isset($_POST['editarPost'])): ?>
                                 <?php 
                                     if(isset($post['imagem'])) {
@@ -217,19 +217,16 @@ function verRespostas($respostas, $post, $nivel = 1) {
                             <?php endif; ?>
                         </div>
                     </div>
-                </div>
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-body">
-                        <?php include 'comentarios/lista.php'; ?>
-                    </div>
-                </div>
-                <?php if (isset($_SESSION['user']) && $_SESSION['user'] != $post['postado'] && !isset($_POST['respondeid'])): ?>
+                    <?php if (isset($_SESSION['user']) && $_SESSION['user'] != $post['postado'] && !isset($_POST['respondeid'])): ?>
                     <div class="card shadow-sm border-0">
                         <div class="card-body">
                             <?php novoComentarioBaseForm($post['id']); ?>
                         </div>
                     </div>
                 <?php endif; ?>
+                </div>
+                <?php include 'comentarios/lista.php'; ?>
+
             </div>
         </div>
     <?php else: ?>
