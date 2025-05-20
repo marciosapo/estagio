@@ -13,8 +13,9 @@ class PostsController extends Controller {
             die("Erro ao carregar o modelo Post: " . $e->getMessage());
         }
     }
-    public function index($id = null) {
+    public function index() {
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+             $id = $_GET['id'] ?? null;
             if($id === null){ 
                 $posts = $this->postModel->getAllPosts("ASC", 0, 0);
                 $this->sendJsonResponse($posts);

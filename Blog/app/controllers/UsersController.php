@@ -48,15 +48,13 @@ class UsersController extends Controller {
         }
     }
 
-    public function index($username = null){
+    public function index(){
         if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-            if($username === null){
-                $users = $this->usersModel->getUsers();
-                if ($users) {
-                    $this->sendJsonResponse($users);
-                } else {
-                    $this->sendJsonResponse(['erro' => 'Users não encontrados'], 404);
-                }
+            $users = $this->usersModel->getUsers();
+            if ($users) {
+                $this->sendJsonResponse($users);
+            } else {
+                $this->sendJsonResponse(['erro' => 'Users não encontrados'], 404);
             }
         }elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $raw = file_get_contents('php://input');
@@ -71,14 +69,14 @@ class UsersController extends Controller {
             $username = $input['username'] ?? '';
             if (empty($username)) {
                 error_log("Usuário vazio");
-                return $this->sendJsonResponse(['erro' => 'Usuário ausentes.'], 400);
+                return $this->sendJsonResponse(['erro' => 'Usuário vazio.'], 400);
             }
             $user = $this->usersModel->getUserApi($username);
             if (is_array($user)) {
                 error_log("User encontrado: " . json_encode($user));
                 $this->sendJsonResponse($user);
             }else {
-                error_log("User NÃO encontrado");
+                error_log("User não encontrado");
                 $this->sendJsonResponse(['erro' => 'User não encontrado'], 404);
             }
         }elseif ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
