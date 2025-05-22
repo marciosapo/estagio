@@ -5,6 +5,10 @@ class Router {
     public function route() {
         $url = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $url = ltrim($url, '/');
+        if ($url === 'Blog/') {
+            header('Location: /Blog');
+            exit();
+        }
         if ($url === 'api.html') {
             $user_agent = strtolower($_SERVER['HTTP_USER_AGENT'] ?? '');
             if (empty($user_agent)){

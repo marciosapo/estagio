@@ -9,7 +9,7 @@ function verificarToken($token, $db) {
         SELECT users.id AS id_user
         FROM tokens
         JOIN users ON tokens.username = users.username
-        WHERE tokens.token = :token
+        WHERE tokens.token = CONVERT(:token USING utf8mb4)
         LIMIT 1
     ";
     $stmt = $db->prepare($query);

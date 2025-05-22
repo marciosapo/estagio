@@ -64,7 +64,7 @@ class PostsController extends Controller {
             if (!isset($input['id'])){
                 $this->sendJsonResponse(['erro' => 'Falta id do Post'], 400);
             }
-            $result = $this->postModel->editarPost($input['id'], $input['title'], $input['post'], $input['token']);
+            $result = $this->postModel->editarPostApi($input['id'], $input['title'], $input['post'], $input['token']);
             if (isset($result['erro'])) {
                 $this->sendJsonResponse(['erro' => $result['erro']], 400);
             } else {

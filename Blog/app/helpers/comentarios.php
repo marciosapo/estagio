@@ -16,6 +16,7 @@ function getComentarios($db, $postId) {
         SELECT 
             c.id AS comentario_id,
             c.comentario,
+            c.id_user,
             c.post_data,
             c.id_parent,
             u.username AS autor

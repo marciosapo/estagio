@@ -29,17 +29,22 @@ class BlogController extends Controller {
     public function index() {
         $pagina = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
         $porPagina = 5;
+        if(!isset($_SESSION['pesquisa'])){ 
+            $_SESSION['pesquisa'] = 'ASC';
+        }   
 
-        if (!isset($_POST['pesquisa']) && !isset($_POST['recente'])) {
-            $resultado = $this->postModel->getAllPosts("ASC", $pagina, $porPagina);
-        } else if (isset($_POST['recente'])) {
+        if (isset($_POST['doRecente'])) {
+            $_SESSION['pesquisa'] = 'DESC';
+        } elseif (isset($_POST['doAntigo'])) {
+            $_SESSION['pesquisa'] = 'ASC';
+        }
+
+        if (isset($_POST['recente'])) {
             $resultado = $this->postModel->getRecentPost();
-        } else if (isset($_POST['doRecente'])) {
-            $resultado = $this->postModel->getAllPosts("DESC", $pagina, $porPagina);
-        } else if (isset($_POST['doAntigo'])) {
-            $resultado = $this->postModel->getAllPosts("ASC", $pagina, $porPagina);
-        } else {
+        } elseif (isset($_POST['pesquisa'])) {
             $resultado = $this->postModel->getPost($_POST['pesquisa'], $pagina, $porPagina);
+        } else {
+            $resultado = $this->postModel->getAllPosts($pagina, $porPagina);
         }
 
         if (!isset($resultado['posts'])) {
@@ -197,6 +202,26 @@ class BlogController extends Controller {
             $result = $this->userModel->getUser($username); 
             $this->renderView('../app/views/dados.php', ['result' => $result]);
         } else {
+            header("Location: /Blog");
+            exit;
+        }
+    }
+    public function verUser() {
+        if(isset($_SESSION['user'])){
+            if(!isset($_GET['username'])){
+                header("Location: /Blog");
+                exit();
+            }
+            if(!isset($_GET['userId'])){
+                header("Location: /Blog");
+                exit();
+            }
+            $user = $_GET['username'];
+            $userId = $_GET['userId'];
+            $result = $this->userModel->getUser($user);
+            $resultData = $this->userModel->getUserData($userId); 
+            $this->renderView('../app/views/verUser.php', ['result' => $result, 'resultData' => $resultData]);
+        }else {
             header("Location: /Blog");
             exit;
         }

@@ -156,7 +156,11 @@ function verRespostas($respostas, $post, $nivel = 1) {
 ?>
 <div class="mb-3">
     <div class="bg-white border rounded p-3 shadow-sm">
-            <strong class="text-primary"><?php echo htmlspecialchars($resposta['autor']); ?></strong>
+            <strong class="text-primary">
+            <a href="/Blog/verUser?userId=<?php echo urlencode($resposta['id_user']); ?>&username=<?php echo urlencode($resposta['autor']); ?>">    
+            <?php echo htmlspecialchars($resposta['autor']); ?>
+            </a>
+            </strong>
             <small class="text-muted"> • <?php echo tempoDecorrido($resposta['post_data']); ?></small>
             <p class="text-break mt-2 mb-2"><?php echo nl2br(htmlspecialchars($resposta['comentario'])); ?></p>
             <?php if(isset($_SESSION['user'])): ?>

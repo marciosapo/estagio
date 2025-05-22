@@ -1,6 +1,11 @@
 document.addEventListener("DOMContentLoaded", function() {
     clearMessage();
 });
+const navType = performance.getEntriesByType("navigation")[0]?.type;
+
+if (navType === 'reload') {
+    window.location.href = '/Blog';
+}
 
 function clearMessage(){
     setTimeout(function() {

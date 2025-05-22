@@ -4,7 +4,11 @@
             <h5 class="mb-4">Comentários</h5>
             <?php foreach ($post['comentarios'] as $comentario): ?>
                 <div class="bg-light rounded p-3 mb-3 shadow-sm">
-                    <strong class="text-primary"><?php echo htmlspecialchars($comentario['autor']); ?></strong>
+                    <strong class="text-primary">
+                    <a href="/Blog/verUser?userId=<?php echo urlencode($comentario['id_user']); ?>&username=<?php echo urlencode($comentario['autor']); ?>">    
+                    <?php echo htmlspecialchars($comentario['autor']); ?>
+                    </a>
+                    </strong>
                     <small class="text-muted"> • <?php echo tempoDecorrido($comentario['post_data']); ?></small>
                     <p class="mt-2 text-break"><?php echo nl2br(htmlspecialchars($comentario['comentario'])); ?></p>
                     <?php if (isset($_SESSION['user'])): ?>

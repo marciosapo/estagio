@@ -35,6 +35,9 @@ class User {
             $userId = $row['id'];
             if (!isset($users[$userId])) {
                 $status = $this->checkToken($row['user']);
+                $data = $this->getUserData($userId);
+                $totalposts = $data['total_posts'];
+                $totalcomentarios = $data['total_comments'];
                 $users[$userId] = [
                     'id' => $userId,
                     'username' => $row['user'],
@@ -45,7 +48,9 @@ class User {
                     'token' => $row['user_token'],
                     'token_expira' => $row['user_token_expira'],
                     'token_status' => $status['status'],
-                    'Ultimo_Login' => $row['lastLogin']     
+                    'Ultimo_Login' => $row['lastLogin'],
+                    'total_posts' => $totalposts,
+                    'total_comentarios' => $totalcomentarios   
                 ];
             }
         } 
@@ -78,6 +83,9 @@ class User {
     
         if ($row) {
             $status = $this->checkToken($username);
+            $data = $this->getUserData($row['id']);
+            $totalposts = $data['total_posts'];
+            $totalcomentarios = $data['total_comments'];
             return [
                 'id' => $row['id'],
                 'username' => $row['user'],
@@ -89,7 +97,9 @@ class User {
                 'imagem' => $row['imagem'], 
                 'token_expira' => $row['user_token_expira'],
                 'token_status' => $status['status'] ?? null,
-                'Ultimo_Login' => $row['lastLogin'] 
+                'Ultimo_Login' => $row['lastLogin'],
+                'total_posts' => $totalposts,
+                'total_comentarios' => $totalcomentarios
             ];
         }
         return null;
@@ -120,6 +130,9 @@ class User {
     
         if ($row) {
             $status = $this->checkToken($username);
+            $data = $this->getUserData($row['id']);
+            $totalposts = $data['total_posts'];
+            $totalcomentarios = $data['total_comments'];
             return [
                 'id' => $row['id'],
                 'username' => $row['user'],
@@ -130,12 +143,37 @@ class User {
                 'token' => $row['user_token'],
                 'token_expira' => $row['user_token_expira'],
                 'token_status' => $status['status'] ?? null,
-                'Ultimo_Login' => $row['lastLogin'] 
+                'Ultimo_Login' => $row['lastLogin'],
+                'total_posts' => $totalposts,
+                'total_comentarios' => $totalcomentarios
             ];
         }
         return null;
     }
     public function novoUser($username, $nome, $email, $pass) {
+        if(strlen($pass) < 8) {
+            return ['erro' => 'Erro ao registar novo utilizador password precisa pelo menos 5 caracteres'];
+        }
+        if (!isset($username) || !isset($nome) || !isset($email) || !isset($pass)) {
+            return ['erro' => 'Dados incompletos'];
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return ['erro' => 'Email inválido'];
+        }
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $username)) {
+            return ['erro' => 'O nome de utilizador apenas pode conter letras, números e underscore (_)'];
+        }
+        if (!preg_match('/[A-Z]/', $pass)) {
+            return ['erro' => 'A senha deve conter pelo menos uma letra maiúscula.'];
+        }
+
+        if (!preg_match('/[0-9]/', $pass)) {
+            return ['erro' => 'A senha deve conter pelo menos um número.'];
+        }
+
+        if (!preg_match('/[\W_]/', $pass)) {
+            return ['erro' => 'A senha deve conter pelo menos um símbolo.'];
+        }
         $checkQuery = "SELECT COUNT(*) FROM users WHERE username = :user OR email = :email";
         $checkStmt = $this->db->prepare($checkQuery);
         $checkStmt->bindValue(':user', trim($username), PDO::PARAM_STR);
@@ -196,6 +234,31 @@ class User {
         } catch (Exception $e) {
             return ['erro' => 'Erro: ' . $e->getMessage()];
         }
+    }
+
+    public function getUserData($userId) {
+        $postsQuery = "
+            SELECT COUNT(*) AS total_posts
+            FROM posts
+            WHERE id_user = :id
+        ";
+        $postsStmt = $this->db->prepare($postsQuery);
+        $postsStmt->bindValue(':id', $userId, PDO::PARAM_INT);
+        $postsStmt->execute();
+        $totalPosts = $postsStmt->fetchColumn();
+        $commentsQuery = "
+        SELECT COUNT(*) AS total_comments
+        FROM comentarios
+        WHERE id_user = :id_user
+        "; 
+        $commentsStmt = $this->db->prepare($commentsQuery);
+        $commentsStmt->bindValue(':id_user', $userId, PDO::PARAM_INT);
+        $commentsStmt->execute();
+        $totalComments = $commentsStmt->fetchColumn();
+        return [
+            'total_posts' => (int)$totalPosts,
+            'total_comments' => (int)$totalComments
+        ];
     }
     
     public function addAdmin($user, $token){

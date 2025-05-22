@@ -33,6 +33,24 @@ class UsersController extends Controller {
                 $this->sendJsonResponse(['erro' => 'O nome de utilizador apenas pode conter letras, números e underscore (_)'], 400);
                 return;
             }
+            if (strlen($input['pass']) < 8) {
+                $this->sendJsonResponse(['erro' => 'Password must be at least 5 characters long.'], 400);
+                return;
+            }
+            if (!preg_match('/[A-Z]/', $pass)) {
+                $this->sendJsonResponse(['erro' => 'A senha deve conter pelo menos uma letra maiúscula.'], 400);
+                return;
+            }
+
+            if (!preg_match('/[0-9]/', $pass)) {
+                $this->sendJsonResponse(['erro' => 'A senha deve conter pelo menos um número.'], 400);
+                return;
+            }
+
+            if (!preg_match('/[\W_]/', $pass)) {
+                $this->sendJsonResponse(['erro' => 'A senha deve conter pelo menos um símbolo.'], 400);
+                return;
+            }
             $username = preg_replace('/[^a-zA-Z0-9_]/', '', $input['username']);
             $nome = $input['nome'] ?? '';
             $email = $input['email'] ?? '';
